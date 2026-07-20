@@ -44,7 +44,9 @@ describe('AuthService', () => {
       verify: jest.fn(),
     };
     configService = {
-      get: jest.fn().mockImplementation((key: string) => `config:${key}`),
+      get: jest.fn().mockImplementation((key: string) =>
+        key === 'JWT_REFRESH_EXPIRES_IN' ? '14d' : `config:${key}`,
+      ),
     };
 
     authService = new AuthService(

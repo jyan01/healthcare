@@ -5,7 +5,8 @@ import * as bcrypt from 'bcryptjs';
 import type { Response } from 'express';
 import { MemberService } from '../member/member.service';
 import { JwtPayload } from '../shared';
-import { parseDurationMs, setRefreshTokenCookie } from './refresh-token-cookie.util';
+import { setRefreshTokenCookie } from './refresh-token-cookie.util';
+import { resolveTtlSeconds } from './jwt-ttl.util';
 
 @Injectable()
 export class AuthService {
@@ -30,17 +31,17 @@ export class AuthService {
       apiKey: member.apiKey,
     };
 
-    const refreshExpiresIn =
-      this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ?? '14d';
+    const refreshExpiresInSec = resolveTtlSeconds(
+      this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ?? '14d',
+    );
 
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- env var (e.g. "14d") vs jsonwebtoken's branded duration string type
-      expiresIn: refreshExpiresIn as any,
+      expiresIn: refreshExpiresInSec,
     });
 
-    setRefreshTokenCookie(res, refreshToken, parseDurationMs(refreshExpiresIn));
+    setRefreshTokenCookie(res, refreshToken, refreshExpiresInSec * 1000);
 
     return {
       accessToken,

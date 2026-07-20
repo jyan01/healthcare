@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { resolveTtlSeconds } from './jwt-ttl.util';
 import { MemberModule } from '../member/member.module';
 
 @Module({
@@ -16,8 +17,9 @@ import { MemberModule } from '../member/member.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET'),
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- env var (e.g. "1d") vs jsonwebtoken's branded duration string type
-        signOptions: { expiresIn: config.get<string>('JWT_EXPIRES_IN') as any },
+        signOptions: {
+          expiresIn: resolveTtlSeconds(config.get<string>('JWT_EXPIRES_IN') ?? '1d'),
+        },
       }),
     }),
   ],
