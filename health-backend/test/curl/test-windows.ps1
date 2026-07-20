@@ -26,13 +26,15 @@ function Write-JsonBody {
   return $path
 }
 
+$doctorCookieJar = Join-Path $TempDir "doctor-cookies.txt"
+
 Write-Host "=== 1. 의사 로그인 ===" -ForegroundColor Cyan
 $loginBodyPath = Write-JsonBody -Body @{ id = $DoctorId; passwd = $DoctorPasswd } -FileName "doctor-login.json"
-$doctorLoginJson = curl.exe -s -X POST "$BaseUrl/auth/login" -H "Content-Type: application/json" -d "@$loginBodyPath"
+$doctorLoginJson = curl.exe -s -X POST "$BaseUrl/auth/login" -c "$doctorCookieJar" -H "Content-Type: application/json" -d "@$loginBodyPath"
 Write-Host $doctorLoginJson
 $doctorLogin = $doctorLoginJson | ConvertFrom-Json
 $doctorToken = $doctorLogin.accessToken
-$doctorRefresh = $doctorLogin.refreshToken
+# RefreshToken은 응답 바디가 아니라 httpOnly 쿠키($doctorCookieJar)로 내려온다.
 
 Write-Host "`n=== 2. 환자 로그인 ===" -ForegroundColor Cyan
 $patientLoginBodyPath = Write-JsonBody -Body @{ id = $PatientId; passwd = $PatientPasswd } -FileName "patient-login.json"
@@ -40,9 +42,8 @@ $patientLoginJson = curl.exe -s -X POST "$BaseUrl/auth/login" -H "Content-Type: 
 Write-Host $patientLoginJson
 $patientToken = ($patientLoginJson | ConvertFrom-Json).accessToken
 
-Write-Host "`n=== 3. AccessToken 재발급 ===" -ForegroundColor Cyan
-$refreshBodyPath = Write-JsonBody -Body @{ refreshToken = $doctorRefresh } -FileName "refresh.json"
-curl.exe -s -X POST "$BaseUrl/auth/refresh" -H "Content-Type: application/json" -d "@$refreshBodyPath"
+Write-Host "`n=== 3. AccessToken 재발급 (쿠키 사용) ===" -ForegroundColor Cyan
+curl.exe -s -X POST "$BaseUrl/auth/refresh" -b "$doctorCookieJar"
 Write-Host ""
 
 Write-Host "`n=== 4. 회원 목록 조회 (의사) ===" -ForegroundColor Cyan

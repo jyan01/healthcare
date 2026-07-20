@@ -1,10 +1,15 @@
 import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
+import type { Response } from 'express';
 import { AuthService } from '../../src/auth/auth.service';
 import { MemberService } from '../../src/member/member.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Member } from '../../src/member/entities/member.entity';
+
+function buildMockRes(): jest.Mocked<Pick<Response, 'cookie'>> {
+  return { cookie: jest.fn() };
+}
 
 function buildMember(overrides: Partial<Member> = {}): Member {
   return {
@@ -54,7 +59,7 @@ describe('AuthService', () => {
       memberService.findById.mockResolvedValue(null);
 
       await expect(
-        authService.login('unknown', 'whatever'),
+        authService.login('unknown', 'whatever', buildMockRes() as unknown as Response),
       ).rejects.toBeInstanceOf(UnauthorizedException);
     });
 
@@ -62,19 +67,28 @@ describe('AuthService', () => {
       memberService.findById.mockResolvedValue(buildMember());
 
       await expect(
-        authService.login('user_003', 'wrong-password'),
+        authService.login('user_003', 'wrong-password', buildMockRes() as unknown as Response),
       ).rejects.toBeInstanceOf(UnauthorizedException);
     });
 
-    it('ID/비밀번호가 일치하면 AccessToken/RefreshToken/회원정보를 반환한다', async () => {
+    it('ID/비밀번호가 일치하면 AccessToken/회원정보를 반환하고 RefreshToken을 httpOnly 쿠키로 심는다', async () => {
       memberService.findById.mockResolvedValue(buildMember());
+      const res = buildMockRes();
 
-      const result = await authService.login('user_003', 'user_003123!');
+      const result = await authService.login(
+        'user_003',
+        'user_003123!',
+        res as unknown as Response,
+      );
 
       expect(result.accessToken).toBe('signed.jwt.token');
-      expect(result.refreshToken).toBe('signed.jwt.token');
       expect(result.member.memberId).toBe('user_003');
       expect(result.member.diseases).toEqual([]);
+      expect(res.cookie).toHaveBeenCalledWith(
+        'refreshToken',
+        'signed.jwt.token',
+        expect.objectContaining({ httpOnly: true, path: '/auth/refresh' }),
+      );
       // Payload는 userId, name, apiKey만 포함해야 한다
       expect(jwtService.sign).toHaveBeenCalledWith({
         userId: 'user_003',

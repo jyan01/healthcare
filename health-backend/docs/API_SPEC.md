@@ -28,7 +28,7 @@
 | --- | --- |
 | Method / Path | `POST /auth/login` |
 | 인증 | 불필요 |
-| 설명 | ID/Password 인증 후 AccessToken, RefreshToken, 회원정보를 발급 |
+| 설명 | ID/Password 인증 후 AccessToken(바디)과 RefreshToken(httpOnly 쿠키), 회원정보를 발급 |
 
 요청
 
@@ -41,7 +41,6 @@
 ```json
 {
   "accessToken": "eyJhbGciOi...",
-  "refreshToken": "eyJhbGciOi...",
   "member": {
     "memberId": "user_003",
     "name": "박지훈",
@@ -53,7 +52,16 @@
 }
 ```
 
+응답 헤더
+
+```
+Set-Cookie: refreshToken=eyJhbGciOi...; HttpOnly; SameSite=Lax; Path=/auth/refresh; Max-Age=1209600
+```
+
 - AccessToken Payload: `{ "userId": "user_003", "name": "박지훈", "apiKey": "key_003" }`
+- **RefreshToken은 응답 바디에 포함되지 않고 httpOnly 쿠키(`refreshToken`)로만 내려간다.** 프론트엔드 코드는 이 값을 직접 읽거나 저장하지 않으며, 브라우저가 쿠키를 자동으로 관리한다.
+- 쿠키는 `Path=/auth/refresh`로 범위가 제한되어 있어 다른 API 호출에는 자동 전송되지 않는다. 상용 환경(HTTPS)에서는 `secure` 속성이 함께 붙는다.
+- 프론트엔드에서 이 쿠키를 주고받으려면 요청에 `withCredentials: true`(axios) 설정이 필요하고, health-backend CORS는 와일드카드가 아닌 명시적 오리진 + `credentials: true`로 구성되어 있어야 한다 (`CORS_ORIGINS` 환경변수, [ARCHITECTURE.md](./ARCHITECTURE.md) 참고).
 - 실패(ID/Password 불일치) 시 `401 Unauthorized`.
 
 ### 1.2 AccessToken 재발급
@@ -61,14 +69,12 @@
 | 항목 | 내용 |
 | --- | --- |
 | Method / Path | `POST /auth/refresh` |
-| 인증 | 불필요 (RefreshToken 자체가 인증 수단) |
-| 설명 | 만료된 AccessToken을 RefreshToken으로 재발급 |
+| 인증 | 불필요 (요청에 자동으로 실리는 `refreshToken` 쿠키 자체가 인증 수단) |
+| 설명 | 만료된 AccessToken을 RefreshToken 쿠키로 재발급 |
 
 요청
 
-```json
-{ "refreshToken": "eyJhbGciOi..." }
-```
+- 바디 없음. `1.1`에서 발급된 `refreshToken` httpOnly 쿠키가 브라우저에 의해 자동으로 전송된다.
 
 응답
 
@@ -76,7 +82,7 @@
 { "accessToken": "eyJhbGciOi..." }
 ```
 
-- RefreshToken이 유효하지 않거나 만료된 경우 `401 Unauthorized` (재로그인 필요).
+- `refreshToken` 쿠키가 없거나 유효하지 않거나 만료된 경우 `401 Unauthorized` (재로그인 필요).
 
 ### 1.3 회원 목록 조회
 

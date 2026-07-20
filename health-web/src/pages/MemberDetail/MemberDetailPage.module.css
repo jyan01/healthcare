@@ -1,0 +1,149 @@
+.page {
+  min-height: calc(100vh - 44px);
+  background: var(--canvas-parchment);
+}
+
+.content {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: -0.224px;
+  color: var(--primary);
+  text-decoration: none;
+  margin-bottom: 20px;
+}
+.backLink svg {
+  width: 10px;
+  height: 10px;
+}
+
+.profileCard {
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 9999px;
+  background: var(--chip-translucent);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.374px;
+  flex: 0 0 auto;
+}
+
+.profileInfo h1 {
+  font-family: 'SF Pro Display', system-ui, -apple-system, sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.374px;
+  margin: 0 0 6px;
+}
+
+.profileMeta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: -0.224px;
+  color: var(--ink-muted-48);
+}
+
+.liveIndicator {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.12px;
+  color: var(--primary);
+}
+.liveIndicatorOffline {
+  color: var(--ink-muted-48);
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--primary);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.liveIndicatorOffline .liveDot {
+  background: var(--ink-muted-48);
+  animation: none;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.75);
+  }
+}
+
+.sectionTitle {
+  font-family: 'SF Pro Display', system-ui, -apple-system, sans-serif;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: 0.231px;
+  margin: 0 0 16px;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.stateMessage {
+  padding: 48px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--ink-muted-48);
+}
+
+@media (max-width: 640px) {
+  .content {
+    padding: 24px 16px 64px;
+  }
+  .profileCard {
+    padding: 18px;
+    gap: 14px;
+  }
+  .avatar {
+    width: 56px;
+    height: 56px;
+    font-size: 18px;
+  }
+  .liveIndicator {
+    margin-left: 0;
+    flex: 1 1 100%;
+  }
+}

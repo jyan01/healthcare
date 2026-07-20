@@ -30,13 +30,9 @@ Content-Type: application/json
   "passwd": "{{patientPasswd}}"
 }
 
-### 3. AccessToken 재발급 (의사 로그인의 refreshToken 사용)
+### 3. AccessToken 재발급 (의사 로그인 응답의 RefreshToken httpOnly 쿠키 사용)
 POST {{baseUrl}}/auth/refresh
-Content-Type: application/json
-
-{
-  "refreshToken": "{{doctorLogin.response.body.$.refreshToken}}"
-}
+Cookie: {{doctorLogin.response.headers.set-cookie}}
 
 ### 4. 회원 목록 조회 (의사 - 전체 환자 목록)
 GET {{baseUrl}}/members

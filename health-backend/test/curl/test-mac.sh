@@ -16,13 +16,16 @@ json_get() {
   node -e "const d=JSON.parse(process.argv[1]); const path=process.argv[2].split('.'); console.log(path.reduce((o,k)=>o?.[k], d))" "$1" "$2"
 }
 
+DOCTOR_COOKIE_JAR=$(mktemp)
+
 echo "=== 1. 의사 로그인 ==="
 DOCTOR_LOGIN=$(curl -s -X POST "$BASE_URL/auth/login" \
+  -c "$DOCTOR_COOKIE_JAR" \
   -H "Content-Type: application/json" \
   -d "{\"id\":\"$DOCTOR_ID\",\"passwd\":\"$DOCTOR_PASSWD\"}")
 echo "$DOCTOR_LOGIN"
 DOCTOR_TOKEN=$(json_get "$DOCTOR_LOGIN" accessToken)
-DOCTOR_REFRESH=$(json_get "$DOCTOR_LOGIN" refreshToken)
+# RefreshToken은 응답 바디가 아니라 httpOnly 쿠키(-c로 저장한 $DOCTOR_COOKIE_JAR)로 내려온다.
 
 echo
 echo "=== 2. 환자 로그인 ==="
@@ -33,11 +36,10 @@ echo "$PATIENT_LOGIN"
 PATIENT_TOKEN=$(json_get "$PATIENT_LOGIN" accessToken)
 
 echo
-echo "=== 3. AccessToken 재발급 ==="
-curl -s -X POST "$BASE_URL/auth/refresh" \
-  -H "Content-Type: application/json" \
-  -d "{\"refreshToken\":\"$DOCTOR_REFRESH\"}"
+echo "=== 3. AccessToken 재발급 (쿠키 사용) ==="
+curl -s -X POST "$BASE_URL/auth/refresh" -b "$DOCTOR_COOKIE_JAR"
 echo
+rm -f "$DOCTOR_COOKIE_JAR"
 
 echo
 echo "=== 4. 회원 목록 조회 (의사) ==="

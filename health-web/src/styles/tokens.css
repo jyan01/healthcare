@@ -1,0 +1,43 @@
+/* docs/DESIGN-apple.md 색상 토큰 — 화면 3종(demo/*-web.html)에서 공통으로 쓰는 값만 모음 */
+:root {
+  --primary: #0066cc;
+  --primary-focus: #0071e3;
+  --ink: #1d1d1f;
+  --ink-muted-80: #333333;
+  --ink-muted-48: #7a7a7a;
+  --body-muted: #cccccc;
+  --hairline: #e0e0e0;
+  --divider-soft: #f0f0f0;
+  --canvas: #ffffff;
+  --canvas-parchment: #f5f5f7;
+  --chip-translucent: rgba(210, 210, 215, 0.64);
+  --surface-tile-1: #272729;
+  --surface-black: #000000;
+  --on-dark: #ffffff;
+  --series-2: #e34948;
+  --good: #0ca30c;
+  --warning: #fab219;
+  --critical: #d03b3b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  color: var(--ink);
+  font-family:
+    'SF Pro Text',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Malgun Gothic',
+    sans-serif;
+}
+
+#root {
+  min-height: 100vh;
+}

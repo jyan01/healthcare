@@ -1,0 +1,131 @@
+.card {
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+  padding: 20px;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.224px;
+  color: var(--ink-muted-80);
+  margin-bottom: 6px;
+}
+
+.value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.num {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.374px;
+  color: var(--ink);
+}
+.unit {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-muted-48);
+  margin-left: 3px;
+}
+
+.chartWrap {
+  position: relative;
+  margin-top: 8px;
+}
+
+.svg {
+  width: 100%;
+  height: 100px;
+  display: block;
+  overflow: visible;
+  touch-action: none;
+}
+
+.gridLine {
+  stroke: var(--divider-soft);
+  stroke-width: 1;
+}
+.seriesPath {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.endDot {
+  stroke: var(--canvas);
+  stroke-width: 2;
+}
+.crosshairLine {
+  stroke: var(--ink-muted-48);
+  stroke-width: 1;
+}
+
+.axisLabel {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: -0.12px;
+  color: var(--ink-muted-48);
+}
+.axisTop {
+  top: -2px;
+  right: 0;
+}
+.axisBottom {
+  bottom: -2px;
+  right: 0;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+}
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  letter-spacing: -0.12px;
+  color: var(--ink-muted-48);
+  font-variant-numeric: tabular-nums;
+}
+.legendKey {
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  flex: 0 0 auto;
+}
+.legendItem strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.tooltip {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: var(--ink);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: -0.12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 2;
+}
+.tooltip strong {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

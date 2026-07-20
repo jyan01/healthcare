@@ -1,0 +1,228 @@
+.page {
+  min-height: calc(100vh - 44px);
+  display: flex;
+  flex-direction: column;
+  background: var(--canvas);
+}
+
+.layout {
+  display: flex;
+  flex: 1 1 auto;
+}
+
+.brandPanel {
+  flex: 1 1 50%;
+  background: var(--surface-tile-1);
+  color: var(--on-dark);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 48px;
+  text-align: center;
+}
+
+.mark {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 24px;
+}
+.mark svg {
+  width: 100%;
+  height: 100%;
+}
+
+.brandPanel h2 {
+  font-family: 'SF Pro Display', system-ui, -apple-system, sans-serif;
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.374px;
+  margin: 0 0 12px;
+}
+
+.brandPanel p {
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.47;
+  letter-spacing: -0.374px;
+  color: var(--body-muted);
+  max-width: 320px;
+  margin: 0;
+}
+
+.formPanel {
+  flex: 1 1 50%;
+  background: var(--canvas);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+}
+
+.loginStack {
+  width: 100%;
+  max-width: 340px;
+}
+
+.title {
+  font-family: 'SF Pro Display', system-ui, -apple-system, sans-serif;
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.19;
+  letter-spacing: 0.231px;
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+
+.subtitle {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.43;
+  letter-spacing: -0.224px;
+  color: var(--ink-muted-48);
+  margin: 0 0 32px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field {
+  width: 100%;
+}
+
+.field label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.224px;
+  color: var(--ink-muted-80);
+  margin: 0 0 6px;
+}
+
+.field input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--canvas);
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: -0.374px;
+  outline: none;
+  transition: border-color 0.15s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.field input::placeholder {
+  color: #b4b7c6;
+}
+
+.field input:focus {
+  border-color: var(--primary-focus);
+  outline: 2px solid var(--primary-focus);
+  outline-offset: -1px;
+}
+
+.errorMessage {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: -0.224px;
+  color: var(--critical);
+  margin: 0;
+}
+
+.loginButton {
+  width: 100%;
+  height: 44px;
+  margin-top: 12px;
+  border: none;
+  border-radius: 9999px;
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: -0.374px;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+.loginButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.loginButton:active {
+  transform: scale(0.95);
+}
+.loginButton:focus-visible {
+  outline: 2px solid var(--primary-focus);
+  outline-offset: 2px;
+}
+
+.signupRow {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: -0.224px;
+  color: var(--ink-muted-48);
+}
+
+.signupRow a {
+  color: var(--primary);
+  text-decoration: none;
+}
+.signupRow a:hover {
+  text-decoration: underline;
+}
+
+.footer {
+  text-align: center;
+  padding: 24px;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: -0.12px;
+  color: var(--ink-muted-48);
+  background: var(--canvas);
+}
+
+@media (max-width: 833px) {
+  .layout {
+    flex-direction: column;
+  }
+  .brandPanel {
+    flex: 0 0 auto;
+    padding: 48px 24px;
+  }
+  .brandPanel h2 {
+    font-size: 28px;
+  }
+  .formPanel {
+    flex: 1 1 auto;
+    padding: 40px 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .brandPanel {
+    padding: 32px 20px;
+  }
+  .mark {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 16px;
+  }
+  .brandPanel h2 {
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+  .brandPanel p {
+    font-size: 14px;
+  }
+}

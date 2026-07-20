@@ -1,0 +1,39 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px 3px 6px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.12px;
+  color: var(--ink-muted-80);
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  flex: 0 0 auto;
+}
+
+.good {
+  background: rgba(12, 163, 12, 0.1);
+}
+.good .dot {
+  background: var(--good);
+}
+
+.warning {
+  background: rgba(250, 178, 25, 0.16);
+}
+.warning .dot {
+  background: var(--warning);
+}
+
+.critical {
+  background: rgba(208, 59, 59, 0.1);
+}
+.critical .dot {
+  background: var(--critical);
+}

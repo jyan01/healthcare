@@ -71,6 +71,55 @@ export interface StepCountRecord {
   measuredAt: string;
 }
 
+/** 로그인/토큰 재발급 시점의 회원 정보 (POST /auth/login 응답) */
+export interface AuthMember {
+  memberId: string;
+  name: string;
+  gender: 'M' | 'F';
+  birthDate: string;
+  memberType: MemberType;
+  diseases: DiseaseSummary[];
+}
+
+export interface LoginResponse {
+  accessToken: string;
+  member: AuthMember;
+}
+
+export interface RefreshResponse {
+  accessToken: string;
+}
+
+export interface MembersListResponse {
+  members: MemberSummary[];
+}
+
+/** GET /members/:memberId 응답의 회원 기본정보 (memberType 없음 — AuthMember와 구분) */
+export interface MemberDetail extends MemberSummary {
+  diseases: DiseaseSummary[];
+}
+
+// GET /members/:memberId(recentHealthData), /members/:memberId/health-data 응답 항목.
+// WebSocket(/health)으로 push되는 *Record와 달리 memberId 필드가 없다 (이미 특정 회원으로 스코프됨).
+export type HeartRateHistoryItem = Omit<HeartRateRecord, 'memberId'>;
+export type BloodPressureHistoryItem = Omit<BloodPressureRecord, 'memberId'>;
+export type BodyWeightHistoryItem = Omit<BodyWeightRecord, 'memberId'>;
+export type GlucoseHistoryItem = Omit<GlucoseRecord, 'memberId'>;
+export type StepCountHistoryItem = Omit<StepCountRecord, 'memberId'>;
+
+export interface HealthDataHistory {
+  heartRate: HeartRateHistoryItem[];
+  bloodPressure: BloodPressureHistoryItem[];
+  bodyWeight: BodyWeightHistoryItem[];
+  glucose: GlucoseHistoryItem[];
+  stepCount: StepCountHistoryItem[];
+}
+
+export interface MemberDetailResponse {
+  member: MemberDetail;
+  recentHealthData: HealthDataHistory;
+}
+
 /** health-backend가 프론트엔드로 push하는 WebSocket(/health) 이벤트명 */
 export const HEALTH_WS_EVENT = {
   HEART_RATE: 'heartRate',

@@ -1,0 +1,11 @@
+.nav {
+  height: 44px;
+  background: var(--surface-black);
+  color: var(--on-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: -0.12px;
+}

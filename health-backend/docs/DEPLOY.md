@@ -119,6 +119,7 @@ docker compose up -d --build
 ### `.github/workflows/deploy-backend.yml`
 
 - Job 레벨 `env:`에 GitHub Secrets/Variables를 **GitHub 이름 그대로** 담아둔다 (이 값들이 `docker-compose.yml`의 `${VAR}` 치환 소스가 된다).
+- rsync는 원격지에 없는 상위 디렉터리를 자동으로 만들어주지 않으므로, 업로드 전에 `appleboy/ssh-action`으로 `mkdir -p ~/deploy/health-backend-$BACKEND_PORT/{health-backend,shared}`를 먼저 실행해 디렉터리를 만들어둔다.
 - `burnett01/rsync-deployments`로 `health-backend/`, `shared/`를 각각 서버에 업로드.
 - `appleboy/ssh-action`의 `envs:`로 필요한 환경변수 이름만 넘겨 원격 셸에 안전하게 주입한 뒤(`script:`에 직접 문자열 치환하지 않음), `docker compose up -d --build`를 실행.
 
@@ -128,7 +129,7 @@ Build context가 monorepo 루트 전체가 되므로, `health-web`/`health-mobil
 
 ## 6. 서버 사전 준비 (최초 1회, 학생별)
 
-- 서버에 `~/deploy/` 디렉터리 존재 (없으면 최초 rsync 시 자동 생성됨).
+- 서버에 `~/deploy/` 디렉터리는 워크플로의 "Ensure remote directories exist" 스텝이 최초 실행 시 자동으로 만들어준다 (rsync 자체는 없는 상위 디렉터리를 만들어주지 않음).
 - 서버에 Docker Engine + Docker Compose v2 설치, 현재 SSH 계정이 `docker` 그룹에 속해 `sudo` 없이 `docker` 명령 실행 가능해야 함.
 - `SSH_KEY`(Secret)에 대응하는 공개키가 서버 `~/.ssh/authorized_keys`에 등록되어 있어야 함.
 - `BACKEND_PORT`로 배정된 포트가 서버 방화벽에서 열려 있어야 함.
@@ -141,3 +142,4 @@ Build context가 monorepo 루트 전체가 되므로, `health-web`/`health-mobil
 | `docker compose up`이 `variable is required` 에러로 즉시 실패 | 필요한 환경변수가 셸/SSH 세션에 export되지 않음 | GitHub Secrets/Variables 등록 여부 및 workflow `env:`/`envs:` 목록 확인 |
 | 다른 학생의 컨테이너가 갑자기 내려감/충돌 | `BACKEND_PORT`가 중복 배정되었거나 네임스페이스 없이 명령을 실행 | `BACKEND_PORT` 배정 대장 확인, 항상 프로젝트 디렉터리(`.../health-backend/`)에서만 `docker compose` 실행 |
 | Slack 알림이 오지 않음 | `SLACK_WEBHOOK_URL`이 컨테이너에 전달되지 않음 | `docker exec <container> printenv SLACK_WEBHOOK_URL`로 값 확인 |
+| rsync 스텝에서 `mkdir "...health-backend" failed: No such file or directory` | 서버에 `~/deploy/health-backend-${BACKEND_PORT}/` 상위 경로가 아직 없는데 rsync가 여러 단계 디렉터리를 한 번에 못 만듦 | "Ensure remote directories exist" 스텝(mkdir -p)이 upload 스텝보다 먼저 실행되는지 워크플로 순서 확인 |

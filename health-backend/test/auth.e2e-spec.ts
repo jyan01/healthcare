@@ -3,9 +3,16 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { INestApplication } from '@nestjs/common';
+import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AuthModule } from '../src/auth/auth.module';
+
+function extractRefreshTokenCookie(setCookieHeader: string[] | undefined): string {
+  const cookie = setCookieHeader?.find((c) => c.startsWith('refreshToken='));
+  if (!cookie) throw new Error('refreshToken 쿠키가 응답에 없습니다.');
+  return cookie.split(';')[0];
+}
 
 /**
  * e2e 테스트 범위는 로그인(및 재발급)만 다룬다.
@@ -36,7 +43,6 @@ class AuthOnlyTestModule {}
 
 interface LoginResponseBody {
   accessToken: string;
-  refreshToken: string;
   member: { memberId: string; memberType: string };
 }
 
@@ -49,6 +55,7 @@ describe('Auth (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.use(cookieParser());
     app.useGlobalPipes(
       new ValidationPipe({ whitelist: true, transform: true }),
     );
@@ -59,7 +66,7 @@ describe('Auth (e2e)', () => {
     await app.close();
   });
 
-  it('POST /auth/login - 올바른 ID/비밀번호면 AccessToken/RefreshToken/회원정보를 반환한다', async () => {
+  it('POST /auth/login - 올바른 ID/비밀번호면 AccessToken/회원정보를 반환하고 RefreshToken을 httpOnly 쿠키로 내려준다', async () => {
     const response = await request(app.getHttpServer())
       .post('/auth/login')
       .send({ id: 'admin', passwd: 'admin001123!' })
@@ -67,9 +74,19 @@ describe('Auth (e2e)', () => {
 
     const body = response.body as LoginResponseBody;
     expect(body).toHaveProperty('accessToken');
-    expect(body).toHaveProperty('refreshToken');
+    expect(body).not.toHaveProperty('refreshToken');
     expect(body.member.memberId).toBe('admin');
     expect(body.member.memberType).toBe('D');
+
+    const refreshCookie = response.headers['set-cookie'] as unknown as
+      | string[]
+      | undefined;
+    expect(
+      refreshCookie?.some((c) => c.startsWith('refreshToken=')),
+    ).toBe(true);
+    expect(
+      refreshCookie?.some((c) => c.toLowerCase().includes('httponly')),
+    ).toBe(true);
   });
 
   it('POST /auth/login - 비밀번호가 틀리면 401을 반환한다', async () => {
@@ -86,25 +103,31 @@ describe('Auth (e2e)', () => {
       .expect(401);
   });
 
-  it('POST /auth/refresh - 로그인으로 받은 RefreshToken으로 새 AccessToken을 재발급한다', async () => {
+  it('POST /auth/refresh - 로그인으로 받은 RefreshToken 쿠키로 새 AccessToken을 재발급한다', async () => {
     const loginResponse = await request(app.getHttpServer())
       .post('/auth/login')
       .send({ id: 'admin', passwd: 'admin001123!' })
       .expect(201);
 
-    const loginBody = loginResponse.body as LoginResponseBody;
+    const refreshTokenCookie = extractRefreshTokenCookie(
+      loginResponse.headers['set-cookie'] as unknown as string[] | undefined,
+    );
     const refreshResponse = await request(app.getHttpServer())
       .post('/auth/refresh')
-      .send({ refreshToken: loginBody.refreshToken })
+      .set('Cookie', refreshTokenCookie)
       .expect(201);
 
     expect(refreshResponse.body).toHaveProperty('accessToken');
   });
 
-  it('POST /auth/refresh - 유효하지 않은 RefreshToken이면 401을 반환한다', async () => {
+  it('POST /auth/refresh - RefreshToken 쿠키가 없으면 401을 반환한다', async () => {
+    await request(app.getHttpServer()).post('/auth/refresh').expect(401);
+  });
+
+  it('POST /auth/refresh - 유효하지 않은 RefreshToken 쿠키면 401을 반환한다', async () => {
     await request(app.getHttpServer())
       .post('/auth/refresh')
-      .send({ refreshToken: 'not-a-real-token' })
+      .set('Cookie', 'refreshToken=not-a-real-token')
       .expect(401);
   });
 });
