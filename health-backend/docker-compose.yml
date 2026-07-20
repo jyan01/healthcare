@@ -14,7 +14,8 @@
 # 필요한 셸 환경변수:
 #   BACKEND_PORT, DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD,
 #   JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, JWT_ACCESS_TTL_SEC, JWT_REFRESH_TTL_SEC,
-#   SIMULATOR_URL, SIMULATOR_RECONNECT_ATTEMPTS, SIMULATOR_TIMEOUT_MS, SLACK_WEBHOOK_URL
+#   SIMULATOR_URL, SIMULATOR_RECONNECT_ATTEMPTS, SIMULATOR_TIMEOUT_MS, SLACK_WEBHOOK_URL,
+#   CORS_ORIGINS
 #
 # 참고: 최상위 `name:` 필드는 Docker Compose v2.20+ 필요.
 # 이보다 낮은 버전이면 `name:` 줄을 지우고 매 명령에 `-p health-backend-${BACKEND_PORT}` 를 붙인다.
@@ -34,6 +35,9 @@ services:
     environment:
       # 서버
       PORT: "${BACKEND_PORT:?}"
+
+      # CORS 허용 도메인 (프론트엔드 오리진, 콤마 구분)
+      CORS_ORIGINS: "${CORS_ORIGINS:?}"
 
       # PostgreSQL (GitHub 이름 = 앱 이름, 그대로 매핑)
       DB_HOST: "${DB_HOST:?}"

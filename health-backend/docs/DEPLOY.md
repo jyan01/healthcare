@@ -56,6 +56,7 @@ health-backend/dist/shared/...
 | `SIMULATOR_RECONNECT_ATTEMPTS` | Variable | `SIMULATOR_RECONNECT_ATTEMPTS` | 현재 앱 코드에서는 미사용(하드코딩된 재연결 로직). 향후 대비해 컨테이너에는 그대로 전달만 해둠 |
 | `SIMULATOR_TIMEOUT_MS` | Variable | `SIMULATOR_TIMEOUT_MS` | 위와 동일 |
 | `SLACK_WEBHOOK_URL` | Variable | `SLACK_WEBHOOK_URL` | 이름 동일 |
+| `CORS_ORIGINS` | Variable | `CORS_ORIGINS` | 이름 동일 — 프론트엔드 오리진(콤마 구분, 예: `https://fe018.ys.iranglab.com,http://localhost:5173`). **스킴(http/https)까지 정확히 일치**해야 브라우저가 CORS를 통과시킨다 |
 | `SERVER_HOST` / `SERVER_PORT` | Variable | (해당 없음) | 배포 대상 서버 SSH 접속 정보. 컨테이너 환경변수 아님 |
 | `SERVER_USER` / `SSH_KEY` | Secret | (해당 없음) | 배포용 SSH 인증 정보. 컨테이너 환경변수 아님 |
 
