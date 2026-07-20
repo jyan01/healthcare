@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>관리자 로그인 · Web</title>
+<style>
+  :root {
+    --primary: #0066cc;
+    --primary-focus: #0071e3;
+    --ink: #1d1d1f;
+    --ink-muted-80: #333333;
+    --ink-muted-48: #7a7a7a;
+    --body-muted: #cccccc;
+    --hairline: #e0e0e0;
+    --canvas: #ffffff;
+    --canvas-parchment: #f5f5f7;
+    --surface-tile-1: #272729;
+    --surface-black: #000000;
+    --on-dark: #ffffff;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: "SF Pro Text", system-ui, -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
+  }
+
+  .global-nav {
+    height: 44px;
+    background: var(--surface-black);
+    color: var(--on-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: -0.12px;
+  }
+
+  .layout {
+    display: flex;
+    min-height: calc(100vh - 44px);
+  }
+
+  /* 좌측: 브랜드 타일 (다크) — 가로형 기준 레이아웃 */
+  .brand-panel {
+    flex: 1 1 50%;
+    background: var(--surface-tile-1);
+    color: var(--on-dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 48px;
+    text-align: center;
+  }
+
+  .brand-panel .mark {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 24px;
+  }
+  .brand-panel .mark svg { width: 100%; height: 100%; }
+
+  .brand-panel h2 {
+    font-family: "SF Pro Display", system-ui, -apple-system, sans-serif;
+    font-size: 34px;
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.374px;
+    margin: 0 0 12px;
+  }
+
+  .brand-panel p {
+    font-size: 17px;
+    font-weight: 400;
+    line-height: 1.47;
+    letter-spacing: -0.374px;
+    color: var(--body-muted);
+    max-width: 320px;
+    margin: 0;
+  }
+
+  /* 우측: 로그인 폼 (라이트) */
+  .form-panel {
+    flex: 1 1 50%;
+    background: var(--canvas);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+  }
+
+  .login-stack {
+    width: 100%;
+    max-width: 340px;
+  }
+
+  h1 {
+    font-family: "SF Pro Display", system-ui, -apple-system, sans-serif;
+    font-size: 21px;
+    font-weight: 600;
+    line-height: 1.19;
+    letter-spacing: 0.231px;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+
+  .subtitle {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.43;
+    letter-spacing: -0.224px;
+    color: var(--ink-muted-48);
+    margin: 0 0 32px;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .field { width: 100%; }
+
+  .field label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.224px;
+    color: var(--ink-muted-80);
+    margin: 0 0 6px;
+  }
+
+  .field input {
+    width: 100%;
+    height: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+    background: var(--canvas);
+    color: var(--ink);
+    font-size: 17px;
+    font-weight: 400;
+    letter-spacing: -0.374px;
+    outline: none;
+    transition: border-color 0.15s ease;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .field input::placeholder { color: #b4b7c6; }
+
+  .field input:focus {
+    border-color: var(--primary-focus);
+    outline: 2px solid var(--primary-focus);
+    outline-offset: -1px;
+  }
+
+  .login-button {
+    width: 100%;
+    height: 44px;
+    margin-top: 12px;
+    border: none;
+    border-radius: 9999px;
+    background: var(--primary);
+    color: #ffffff;
+    font-size: 17px;
+    font-weight: 400;
+    letter-spacing: -0.374px;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+  }
+
+  .login-button:active { transform: scale(0.95); }
+  .login-button:focus-visible {
+    outline: 2px solid var(--primary-focus);
+    outline-offset: 2px;
+  }
+
+  .signup-row {
+    margin-top: 24px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: -0.224px;
+    color: var(--ink-muted-48);
+  }
+
+  .signup-row a { color: var(--primary); text-decoration: none; }
+  .signup-row a:hover { text-decoration: underline; }
+
+  footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: -0.12px;
+    color: var(--ink-muted-48);
+    background: var(--canvas);
+  }
+
+  /* 반응형: 833px 이하 — 좌우 분할 → 상단 브랜드 밴드 + 하단 폼으로 축소 */
+  @media (max-width: 833px) {
+    .layout { flex-direction: column; }
+    .brand-panel { flex: 0 0 auto; padding: 48px 24px; }
+    .brand-panel h2 { font-size: 28px; }
+    .form-panel { flex: 1 1 auto; padding: 40px 24px; }
+  }
+
+  /* 640px 이하 — 브랜드 밴드 더 축소 */
+  @media (max-width: 640px) {
+    .brand-panel { padding: 32px 20px; }
+    .brand-panel .mark { width: 32px; height: 32px; margin-bottom: 16px; }
+    .brand-panel h2 { font-size: 24px; margin-bottom: 8px; }
+    .brand-panel p { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+  <div class="global-nav">HEALTH ADMIN — WEB</div>
+
+  <div class="layout">
+    <section class="brand-panel">
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 21s-7.5-4.6-9.6-9.1C.8 8.1 2.3 4.8 5.6 4.1c2-.4 3.8.5 5 2.1.9-1.6 2.8-2.5 4.8-2.1 3.3.7 4.8 4 3.2 7.8C16.5 16.4 12 21 12 21z"/>
+        </svg>
+      </div>
+      <h2>헬스케어 관리 시스템</h2>
+      <p>의사와 환자를 위한 실시간 건강정보 관리 플랫폼입니다.</p>
+    </section>
+
+    <section class="form-panel">
+      <div class="login-stack">
+        <h1>관리자 로그인</h1>
+        <p class="subtitle">의사 · 환자 계정으로 로그인하세요</p>
+
+        <form>
+          <div class="field">
+            <label for="username">아이디</label>
+            <input id="username" type="text" placeholder="아이디를 입력하세요" autocomplete="username">
+          </div>
+          <div class="field">
+            <label for="password">암호</label>
+            <input id="password" type="password" placeholder="암호를 입력하세요" autocomplete="current-password">
+          </div>
+
+          <button class="login-button" type="submit">로그인</button>
+        </form>
+
+        <p class="signup-row">계정이 없으신가요? <a href="#">가입하기</a></p>
+      </div>
+    </section>
+  </div>
+
+  <footer>&copy; 2026 Health Admin. All rights reserved.</footer>
+</body>
+</html>

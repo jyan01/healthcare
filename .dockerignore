@@ -1,0 +1,29 @@
+# health-backend Docker 빌드 컨텍스트(repo root)에서 제외할 경로.
+# Dockerfile은 health-backend/ 와 shared/ 만 COPY하므로 나머지는 컨텍스트 전송 대상에서 제외한다.
+
+**/node_modules
+**/dist
+**/coverage
+**/.nyc_output
+
+.git
+.github
+
+# 이 배포 대상이 아닌 다른 앱들
+health-web
+health-mobile
+health-ai
+demo
+healthcarekey
+
+# 문서/대용량 첨부
+**/*.pdf
+
+# 비밀/로그
+**/.env
+**/.env.*
+**/logs
+**/*.log
+
+.vscode
+.idea

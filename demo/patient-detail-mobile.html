@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>환자 건강 상세 · Mobile (React Native)</title>
+<style>
+  :root {
+    --primary: #0066cc;
+    --primary-focus: #0071e3;
+    --ink: #1d1d1f;
+    --ink-muted-80: #333333;
+    --ink-muted-48: #7a7a7a;
+    --hairline: #e0e0e0;
+    --divider-soft: #f0f0f0;
+    --canvas: #ffffff;
+    --canvas-parchment: #f5f5f7;
+    --chip-translucent: rgba(210, 210, 215, 0.64);
+    --good: #0ca30c;
+    --warning: #fab219;
+    --critical: #d03b3b;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background: var(--canvas-parchment);
+    color: var(--ink);
+    font-family: "SF Pro Text", system-ui, -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+
+  .backdrop-label {
+    position: fixed;
+    top: 16px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 12px;
+    color: var(--ink-muted-48);
+  }
+
+  .device {
+    width: 375px;
+    max-width: 100%;
+    height: 812px;
+    max-height: calc(100vh - 64px);
+    background: var(--canvas);
+    border: 1px solid var(--hairline);
+    border-radius: 40px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .status-bar {
+    flex: 0 0 auto;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.224px;
+  }
+
+  .nav-bar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px 12px;
+    border-bottom: 1px solid var(--divider-soft);
+  }
+  .nav-bar svg { width: 11px; height: 11px; color: var(--primary); }
+  .nav-bar a {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--primary);
+    font-size: 15px;
+    letter-spacing: -0.374px;
+    text-decoration: none;
+  }
+  .nav-bar .nav-title {
+    flex: 1;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.224px;
+    margin-right: 40px;
+  }
+
+  .scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 16px 16px 24px;
+  }
+
+  .profile-card {
+    background: var(--canvas);
+    border: 1px solid var(--hairline);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 9999px;
+    background: var(--chip-translucent);
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.374px;
+    flex: 0 0 auto;
+  }
+
+  .profile-info h1 {
+    font-family: "SF Pro Display", system-ui, -apple-system, sans-serif;
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: -0.374px;
+    margin: 0 0 4px;
+  }
+
+  .profile-meta {
+    display: flex;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--ink-muted-48);
+  }
+
+  .live-indicator {
+    flex: 1 1 100%;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary);
+  }
+
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 9999px;
+    background: var(--primary);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(0.75); }
+  }
+
+  .section-title {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.224px;
+    color: var(--ink-muted-80);
+    margin: 4px 2px 10px;
+  }
+
+  .metrics-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .metric-card {
+    background: var(--canvas);
+    border: 1px solid var(--hairline);
+    border-radius: 16px;
+    padding: 14px;
+  }
+
+  .metric-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 2px;
+  }
+
+  .metric-label {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.224px;
+    color: var(--ink-muted-80);
+    margin-bottom: 5px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 7px 2px 5px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-muted-80);
+  }
+  .badge .dot { width: 6px; height: 6px; border-radius: 9999px; flex: 0 0 auto; }
+  .badge-good { background: rgba(12, 163, 12, 0.10); }
+  .badge-good .dot { background: var(--good); }
+  .badge-warning { background: rgba(250, 178, 25, 0.16); }
+  .badge-warning .dot { background: var(--warning); }
+  .badge-critical { background: rgba(208, 59, 59, 0.10); }
+  .badge-critical .dot { background: var(--critical); }
+
+  .metric-value {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .metric-value .num {
+    font-size: 21px;
+    font-weight: 600;
+    letter-spacing: -0.374px;
+  }
+  .metric-value .unit {
+    font-size: 12px;
+    color: var(--ink-muted-48);
+    margin-left: 2px;
+  }
+
+  .chart-wrap { position: relative; margin-top: 6px; }
+  .chart-wrap svg { width: 100%; height: 76px; display: block; overflow: visible; }
+
+  .grid-line { stroke: var(--divider-soft); stroke-width: 1; }
+  .series-path { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .end-dot { stroke: var(--canvas); stroke-width: 2; }
+  .crosshair-line { stroke: var(--ink-muted-48); stroke-width: 1; opacity: 0; }
+
+  .axis-label {
+    position: absolute;
+    font-size: 10px;
+    color: var(--ink-muted-48);
+  }
+  .axis-top { top: -2px; right: 0; }
+  .axis-bottom { bottom: -2px; right: 0; }
+
+  .legend { display: flex; gap: 12px; margin-top: 8px; }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--ink-muted-48);
+    font-variant-numeric: tabular-nums;
+  }
+  .legend-key { width: 10px; height: 2px; border-radius: 1px; flex: 0 0 auto; }
+  .legend-item strong { color: var(--ink); font-weight: 600; }
+
+  .tooltip {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    background: var(--ink);
+    color: #ffffff;
+    font-size: 10px;
+    padding: 3px 6px;
+    border-radius: 5px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.1s ease;
+    white-space: nowrap;
+    z-index: 2;
+  }
+  .tooltip strong { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .footnote {
+    font-size: 10px;
+    color: var(--ink-muted-48);
+    margin: 12px 2px 0;
+    line-height: 1.4;
+  }
+
+  .home-indicator {
+    flex: 0 0 auto;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .home-indicator span {
+    width: 120px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--ink);
+    opacity: 0.25;
+  }
+</style>
+</head>
+<body>
+  <div class="backdrop-label">React Native 목업 — 세로형(Portrait) 검증용</div>
+
+  <div class="device">
+    <div class="status-bar">
+      <span>9:41</span>
+      <span>●●●</span>
+    </div>
+
+    <div class="nav-bar">
+      <a href="./patient-list-mobile.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        목록
+      </a>
+      <span class="nav-title">환자 상세</span>
+    </div>
+
+    <div class="scroll">
+      <div class="profile-card">
+        <div class="avatar">박지</div>
+        <div class="profile-info">
+          <h1>박지훈</h1>
+          <div class="profile-meta"><span>남</span><span>1980-04-12</span></div>
+        </div>
+        <div class="live-indicator"><span class="live-dot"></span>실시간 수신 중</div>
+      </div>
+
+      <div class="section-title">실시간 건강정보</div>
+      <div class="metrics-stack" id="metricsGrid"></div>
+
+      <p class="footnote">※ 데모 화면입니다. 실제 서비스에서는 지표별 외부 전송 주기(심박 4초, 걸음수 4.5초, 혈압 2시간, 혈당 1시간 등)를 따릅니다. 이 화면은 검증 목적상 1.5초 주기로 스트리밍합니다.</p>
+    </div>
+
+    <div class="home-indicator"><span></span></div>
+  </div>
+
+  <script>
+    const PRIMARY = "#0066cc";
+    const SERIES_2 = "#e34948";
+    const WINDOW = 30;
+    const TICK_MS = 1500;
+
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+    function walk(prev, step, lo, hi) { return clamp(prev + (Math.random() - 0.5) * step, lo, hi); }
+
+    const METRICS = [
+      {
+        key: "heartRate", label: "심박수", unit: "bpm", decimals: 0,
+        series: [{ color: PRIMARY }],
+        state: { v: 72 },
+        tick(s) {
+          if (Math.random() < 0.05) s.v = clamp(s.v + 18 + Math.random() * 8, 40, 150);
+          else s.v = walk(s.v, 4, 55, 100);
+          return [s.v];
+        },
+        status(vals) { return vals[0] >= 100 ? ["critical", "이상감지"] : ["good", "정상"]; },
+      },
+      {
+        key: "bloodPressure", label: "혈압", unit: "mmHg", decimals: 0,
+        series: [{ color: PRIMARY, label: "수축기" }, { color: SERIES_2, label: "이완기" }],
+        state: { sys: 118, dia: 76 },
+        tick(s) {
+          if (Math.random() < 0.05) { s.sys = clamp(s.sys + 14, 100, 168); s.dia = clamp(s.dia + 8, 60, 100); }
+          else { s.sys = walk(s.sys, 3, 100, 140); s.dia = walk(s.dia, 2, 65, 90); }
+          return [s.sys, s.dia];
+        },
+        status(vals) {
+          const [sys, dia] = vals;
+          if (sys >= 140 || dia >= 90) return ["critical", "높음"];
+          if (sys >= 120 || dia >= 80) return ["warning", "주의"];
+          return ["good", "정상"];
+        },
+      },
+      {
+        key: "glucose", label: "혈당", unit: "mg/dL", decimals: 0,
+        series: [{ color: PRIMARY }],
+        state: { v: 96 },
+        tick(s) {
+          if (Math.random() < 0.05) s.v = clamp(s.v + 35, 70, 190);
+          else s.v = walk(s.v, 5, 75, 130);
+          return [s.v];
+        },
+        status(vals) {
+          const v = vals[0];
+          if (v >= 140) return ["critical", "높음"];
+          if (v >= 110) return ["warning", "주의"];
+          return ["good", "정상"];
+        },
+      },
+      {
+        key: "weight", label: "체중", unit: "kg", decimals: 1,
+        series: [{ color: PRIMARY }], state: { v: 68.4 },
+        tick(s) { s.v = walk(s.v, 0.08, 67.5, 69.3); return [s.v]; },
+      },
+      {
+        key: "bmi", label: "BMI", unit: "", decimals: 1,
+        series: [{ color: PRIMARY }], state: { v: 22.1 },
+        tick(s) { s.v = walk(s.v, 0.03, 21.6, 22.6); return [s.v]; },
+      },
+      {
+        key: "muscle", label: "골격근량", unit: "kg", decimals: 1,
+        series: [{ color: PRIMARY }], state: { v: 29.5 },
+        tick(s) { s.v = walk(s.v, 0.05, 29.0, 30.0); return [s.v]; },
+      },
+      {
+        key: "fat", label: "체지방률", unit: "%", decimals: 1,
+        series: [{ color: PRIMARY }], state: { v: 21.3 },
+        tick(s) { s.v = walk(s.v, 0.1, 20.5, 22.2); return [s.v]; },
+      },
+    ];
+
+    const grid = document.getElementById("metricsGrid");
+
+    function buildCard(metric) {
+      const card = document.createElement("div");
+      card.className = "metric-card";
+
+      const multi = metric.series.length > 1;
+      card.innerHTML = `
+        <div class="metric-head">
+          <div>
+            <div class="metric-label">${metric.label}</div>
+            ${metric.status ? `<span class="badge" data-badge></span>` : ""}
+          </div>
+          <div class="metric-value"><span class="num" data-value>--</span><span class="unit">${metric.unit}</span></div>
+        </div>
+        <div class="chart-wrap">
+          <svg viewBox="0 0 300 100" preserveAspectRatio="none">
+            <line class="grid-line" x1="0" y1="25" x2="300" y2="25"/>
+            <line class="grid-line" x1="0" y1="75" x2="300" y2="75"/>
+            ${metric.series.map((s, i) => `<path class="series-path" data-path="${i}" stroke="${s.color}"/>`).join("")}
+            ${metric.series.map((s, i) => `<circle class="end-dot" data-dot="${i}" r="4" fill="${s.color}"/>`).join("")}
+            <line class="crosshair-line" data-crosshair y1="0" y2="100" x1="0" x2="0"/>
+          </svg>
+          <div class="axis-label axis-top" data-axis-top></div>
+          <div class="axis-label axis-bottom" data-axis-bottom></div>
+          <div class="tooltip" data-tooltip></div>
+        </div>
+        ${multi ? `<div class="legend">${metric.series.map((s) => `
+          <span class="legend-item"><span class="legend-key" style="background:${s.color}"></span>${s.label} <strong data-legend="${s.label}">--</strong></span>
+        `).join("")}</div>` : ""}
+      `;
+      grid.appendChild(card);
+
+      const els = {
+        value: card.querySelector("[data-value]"),
+        badge: card.querySelector("[data-badge]"),
+        paths: [...card.querySelectorAll("[data-path]")],
+        dots: [...card.querySelectorAll("[data-dot]")],
+        axisTop: card.querySelector("[data-axis-top]"),
+        axisBottom: card.querySelector("[data-axis-bottom]"),
+        crosshair: card.querySelector("[data-crosshair]"),
+        tooltip: card.querySelector("[data-tooltip]"),
+        svg: card.querySelector("svg"),
+        legends: [...card.querySelectorAll("[data-legend]")],
+      };
+
+      const points = [];
+
+      function fmt(v) { return v.toFixed(metric.decimals); }
+
+      function draw() {
+        const all = points.flatMap((p) => p.values);
+        let lo = Math.min(...all), hi = Math.max(...all);
+        if (lo === hi) { lo -= 1; hi += 1; }
+        const pad = (hi - lo) * 0.2 || 1;
+        lo -= pad; hi += pad;
+
+        const W = 300, H = 100;
+        const stepFull = W / (WINDOW - 1);
+        const offset = (WINDOW - points.length) * stepFull;
+        const xAt = (i) => offset + i * stepFull;
+        const yAt = (v) => H - ((v - lo) / (hi - lo)) * H;
+
+        metric.series.forEach((s, si) => {
+          const d = points.map((p, i) => `${i === 0 ? "M" : "L"}${xAt(i).toFixed(1)},${yAt(p.values[si]).toFixed(1)}`).join(" ");
+          els.paths[si].setAttribute("d", d);
+          const last = points[points.length - 1];
+          els.dots[si].setAttribute("cx", xAt(points.length - 1));
+          els.dots[si].setAttribute("cy", yAt(last.values[si]));
+        });
+
+        els.axisTop.textContent = fmt(hi);
+        els.axisBottom.textContent = fmt(lo);
+
+        const last = points[points.length - 1];
+        els.value.textContent = fmt(last.values[0]);
+        if (els.legends.length) {
+          metric.series.forEach((s, si) => { els.legends[si].textContent = fmt(last.values[si]); });
+        }
+        if (metric.status && els.badge) {
+          const [level, text] = metric.status(last.values);
+          els.badge.className = `badge badge-${level}`;
+          els.badge.innerHTML = `<span class="dot"></span>${text}`;
+        }
+
+        card._domain = { lo, hi, xAt, yAt };
+      }
+
+      function push(values) {
+        points.push({ values });
+        if (points.length > WINDOW) points.shift();
+        draw();
+      }
+
+      els.svg.addEventListener("pointermove", (e) => {
+        if (points.length < 2 || !card._domain) return;
+        const rect = els.svg.getBoundingClientRect();
+        const xRatio = clamp((e.clientX - rect.left) / rect.width, 0, 1);
+        const svgX = xRatio * 300;
+        const stepFull = 300 / (WINDOW - 1);
+        const offset = (WINDOW - points.length) * stepFull;
+        let idx = Math.round((svgX - offset) / stepFull);
+        idx = clamp(idx, 0, points.length - 1);
+
+        els.crosshair.setAttribute("x1", card._domain.xAt(idx));
+        els.crosshair.setAttribute("x2", card._domain.xAt(idx));
+        els.crosshair.style.opacity = 1;
+
+        const p = points[idx];
+        const secondsAgo = (points.length - 1 - idx) * (TICK_MS / 1000);
+        const rows = metric.series.map((s, si) => `<strong>${fmt(p.values[si])}</strong>${metric.unit ? " " + metric.unit : ""}${s.label ? " (" + s.label + ")" : ""}`).join(" · ");
+        els.tooltip.innerHTML = `${rows}<br><span style="opacity:.7">${secondsAgo === 0 ? "지금" : "-" + secondsAgo.toFixed(0) + "초"}</span>`;
+        els.tooltip.style.opacity = 1;
+      });
+      els.svg.addEventListener("pointerleave", () => {
+        els.crosshair.style.opacity = 0;
+        els.tooltip.style.opacity = 0;
+      });
+
+      return { push };
+    }
+
+    const instances = METRICS.map((m) => ({ metric: m, chart: buildCard(m) }));
+
+    function tick() {
+      instances.forEach(({ metric, chart }) => {
+        const values = metric.tick(metric.state);
+        chart.push(values);
+      });
+    }
+
+    tick();
+    setInterval(tick, TICK_MS);
+  </script>
+</body>
+</html>

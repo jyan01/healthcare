@@ -1,0 +1,12 @@
+userid,apikey,passwd,user_type,name,birth,gender
+admin,admin,admin001123!,D,김닥터,1968-03-11,M
+user_001,key_001,user_001123!,P,김민준,1998-07-22,M
+user_002,key_002,user_002123!,P,이서연,1992-11-05,F
+user_003,key_003,user_003123!,P,박지훈,1981-02-17,M
+user_004,key_004,user_004123!,P,최수빈,1974-09-30,F
+user_005,key_005,user_005123!,P,정하늘,2007-05-08,M
+user_006,key_006,user_006123!,P,한지민,1959-12-24,F
+user_007,key_007,user_007123!,P,김도윤,1995-04-13,M
+user_008,key_008,user_008123!,P,이민지,2002-08-19,F
+user_009,key_009,user_009123!,P,오성민,1968-06-02,M
+user_010,key_010,user_010123!,P,서예진,1987-10-27,F

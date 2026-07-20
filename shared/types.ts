@@ -1,0 +1,115 @@
+// 백엔드(health-backend)·웹(health-web)·앱(health-mobile)이 공유하는 타입/상수/판정 함수.
+// health-ai(Python)는 제외. 실제 DB 스키마 값 기준(docs/table.sql, docs/insert.sql)으로 맞춰져 있음.
+
+/** 회원유형: D=의사, P=환자 (member.member_type 실제 컬럼값 기준) */
+export type MemberType = 'D' | 'P';
+
+/** health-backend가 발급하는 AccessToken/RefreshToken의 JWT Payload */
+export interface JwtPayload {
+  userId: string;
+  name: string;
+  apiKey: string;
+}
+
+/** 심박/혈압 등 백엔드가 저장 시점에 판정하는 상태값 */
+export type VitalStatus = '정상' | '주의' | '이상';
+
+/** 혈당 상태값 — 외부 시뮬레이터가 내려주는 값을 그대로 사용 (docs/DATA_MODEL.md 참고) */
+export type GlucoseStatus = 'normal' | 'elevated' | 'high';
+
+/** 체중/BMI 상태값 */
+export type BodyWeightStatus = '저체중' | '정상' | '과체중' | '비만';
+
+export interface MemberSummary {
+  memberId: string;
+  name: string;
+  gender: 'M' | 'F';
+  birthDate: string; // YYYYMMDD
+}
+
+export interface DiseaseSummary {
+  diseaseId: string;
+  nameKr: string;
+}
+
+export interface HeartRateRecord {
+  memberId: string;
+  heartRate: number;
+  status: VitalStatus;
+  remark?: string | null;
+  measuredAt: string;
+}
+
+export interface BloodPressureRecord {
+  memberId: string;
+  systolic: number;
+  diastolic: number;
+  status: VitalStatus;
+  measuredAt: string;
+}
+
+export interface BodyWeightRecord {
+  memberId: string;
+  weightKg: number;
+  bmi: number;
+  skeletalMuscleMassKg?: number | null;
+  bodyFatPercentage?: number | null;
+  status: BodyWeightStatus;
+  measuredAt: string;
+}
+
+export interface GlucoseRecord {
+  memberId: string;
+  glucoseValue: number;
+  status: GlucoseStatus;
+  measuredAt: string;
+}
+
+export interface StepCountRecord {
+  memberId: string;
+  totalSteps: number;
+  measuredAt: string;
+}
+
+/** health-backend가 프론트엔드로 push하는 WebSocket(/health) 이벤트명 */
+export const HEALTH_WS_EVENT = {
+  HEART_RATE: 'heartRate',
+  BLOOD_PRESSURE: 'bloodPressure',
+  BODY_WEIGHT: 'bodyWeight',
+  GLUCOSE: 'glucose',
+  STEP_COUNT: 'stepCount',
+} as const;
+
+/**
+ * 혈압 상태 판정 — 외부 시뮬레이터 이벤트에는 상태 필드가 없으므로 백엔드가 수축기/이완기 값으로 직접 판정한다.
+ * 기준: 수축기 140↑ 또는 이완기 90↑ = 이상, 130↑/85↑ = 주의, 그 외 정상.
+ */
+export function judgeBloodPressureStatus(systolic: number, diastolic: number): VitalStatus {
+  if (systolic >= 140 || diastolic >= 90) return '이상';
+  if (systolic >= 130 || diastolic >= 85) return '주의';
+  return '정상';
+}
+
+/**
+ * 체중 상태 판정 — WHO 아시아·태평양 기준 BMI 구간.
+ */
+export function judgeBodyWeightStatus(bmi: number): BodyWeightStatus {
+  if (bmi < 18.5) return '저체중';
+  if (bmi < 23) return '정상';
+  if (bmi < 25) return '과체중';
+  return '비만';
+}
+
+/** 심박 이상 여부 — 시뮬레이터가 내려준 source가 abnormal_event인지로 판정 (docs/DATA_MODEL.md 참고) */
+export function judgeHeartRateStatus(source: 'simulation' | 'abnormal_event'): VitalStatus {
+  return source === 'abnormal_event' ? '이상' : '정상';
+}
+
+/** Slack 알림(ALM) 대상 여부 판정 — docs/health-backend/API_SPEC.md 7장 기준 */
+export function isAlertTarget(
+  metric: 'heartRate' | 'bloodPressure' | 'glucose',
+  status: VitalStatus | GlucoseStatus,
+): boolean {
+  if (metric === 'glucose') return status === 'high';
+  return status === '이상';
+}

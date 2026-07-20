@@ -1,0 +1,11 @@
+﻿diseaseid,name,name_kr,category,severity,description
+HYP,Hypertension,고혈압,cardiovascular,moderate,High blood pressure leading to increased cardiovascular risk.
+DIA,Diabetes,당뇨병,metabolic,moderate,Type 2 diabetes with glucose regulation issues.
+MI,Myocardial Infarction,심근경색,cardiovascular,high,History of heart attack requiring careful heart rate monitoring.
+ARR,Arrhythmia,부정맥,cardiovascular,moderate,Irregular heart rhythm that may cause variability in heart rate.
+AST,Asthma,천식,respiratory,low,Mild airway constriction affecting exercise tolerance.
+SLP,Sleep Apnea,수면무호흡,respiratory,moderate,Sleep-disordered breathing that can worsen cardiovascular stress.
+none,None,없음,general,none,No diagnosed medical conditions.
+CHO,High Cholesterol,고지혈증,metabolic,low,Elevated cholesterol levels contributing to cardiovascular risk.
+ATH,Arthritis,관절염,musculoskeletal,low,Joint discomfort reducing walking comfort and activity.
+THY,Thyroid Issue,갑상선 문제,endocrine,low,Thyroid condition affecting metabolism and energy levels.
