@@ -130,3 +130,4 @@ health-backend와 같은 서버(`SERVER_HOST`)를 공유하므로 SSH 키·Docke
 | `/members/123`을 새로고침하면 404 | nginx가 `try_files ... /index.html` fallback 없이 정적 파일로만 매칭 시도 | `nginx.conf`가 이미지에 제대로 COPY됐는지, `location /` 블록이 맞는지 확인 |
 | `docker compose up`이 `variable is required` 에러로 즉시 실패 | 필요한 환경변수가 셸/SSH 세션에 export되지 않음 | GitHub Variables 등록 여부(`FRONTEND_PORT`, `VITE_API_BASE_URL`) 및 workflow `env:`/`envs:` 목록 확인 |
 | `docker build`에서 `Cannot find module '../../shared/types'` 류 에러 | build context가 monorepo 루트가 아니거나, 서버에 `shared/`가 업로드되지 않음 | `docker-compose.yml`의 `build.context`가 `..`인지, 서버 `~/deploy/health-web-${FRONTEND_PORT}/` 아래 `shared/`가 있는지 확인 |
+| 이미지 빌드는 성공했는데 `all predefined address pools have been fully subnetted` 에러로 실패 | 공유 배포 서버에 학생들의 `docker compose` 프로젝트별 네트워크가 쌓여 Docker의 기본 네트워크 주소 풀이 소진됨 | health-web은 단일 서비스라 전용 네트워크가 필요 없으므로 `docker-compose.yml`에 `network_mode: bridge`를 지정해 Docker 기본 bridge 네트워크를 재사용하도록 이미 고쳐둠 (서버의 네트워크 풀 상태와 무관하게 배포됨) |
