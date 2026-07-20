@@ -1,5 +1,7 @@
-# health-backend Docker 빌드 컨텍스트(repo root)에서 제외할 경로.
-# Dockerfile은 health-backend/ 와 shared/ 만 COPY하므로 나머지는 컨텍스트 전송 대상에서 제외한다.
+# health-backend / health-web 공용 Docker 빌드 컨텍스트(repo root)에서 제외할 경로.
+# 두 Dockerfile 모두 context: .. (monorepo 루트)를 쓰며, 각자 자기 폴더(health-backend 또는
+# health-web)와 shared/ 만 COPY하므로 나머지는 컨텍스트 전송 대상에서 제외한다.
+# (Docker는 build context 하나에 .dockerignore 하나만 적용되므로 두 앱이 이 파일을 공유한다.)
 
 **/node_modules
 **/dist
@@ -10,7 +12,6 @@
 .github
 
 # 이 배포 대상이 아닌 다른 앱들
-health-web
 health-mobile
 health-ai
 demo
