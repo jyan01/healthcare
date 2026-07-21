@@ -25,6 +25,7 @@ interface MetricsState {
   bmi: MetricPoint[];
   muscle: MetricPoint[];
   fat: MetricPoint[];
+  stepCount: MetricPoint[];
 }
 
 const EMPTY_METRICS: MetricsState = {
@@ -35,6 +36,7 @@ const EMPTY_METRICS: MetricsState = {
   bmi: [],
   muscle: [],
   fat: [],
+  stepCount: [],
 };
 
 function heartRateBadge(status: VitalStatus) {
@@ -189,6 +191,7 @@ function MemberDetailView({ memberId, isDoctor }: { memberId: string; isDoctor: 
           fat: recentHealthData.bodyWeight
             .filter((r) => r.bodyFatPercentage != null)
             .map((r) => ({ measuredAt: r.measuredAt, values: [r.bodyFatPercentage as number] })),
+          stepCount: recentHealthData.stepCount.map((r) => ({ measuredAt: r.measuredAt, values: [r.totalSteps] })),
         });
 
         const lastHeartRate = recentHealthData.heartRate.at(-1);
@@ -272,6 +275,14 @@ function MemberDetailView({ memberId, isDoctor }: { memberId: string; isDoctor: 
           record.bodyFatPercentage == null
             ? prev.fat
             : appendAndTrim(prev.fat, { measuredAt: record.measuredAt, values: [record.bodyFatPercentage] }),
+      }));
+    });
+
+    socket.on('stepCount', (record) => {
+      if (record.memberId !== memberId) return;
+      setMetrics((prev) => ({
+        ...prev,
+        stepCount: appendAndTrim(prev.stepCount, { measuredAt: record.measuredAt, values: [record.totalSteps] }),
       }));
     });
 
@@ -397,6 +408,13 @@ function MemberDetailView({ memberId, isDoctor }: { memberId: string; isDoctor: 
                 points={metrics.muscle}
               />
               <MetricCard label="체지방률" unit="%" decimals={1} series={[{ color: PRIMARY }]} points={metrics.fat} />
+              <MetricCard
+                label="걸음수"
+                unit="보"
+                decimals={0}
+                series={[{ color: PRIMARY }]}
+                points={metrics.stepCount}
+              />
             </div>
 
             <div className={styles.periodSection}>
