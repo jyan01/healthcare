@@ -43,6 +43,7 @@ class AskRequest(BaseModel):
     top_k: int = 3
     temperature: float = 0.2
     max_chars_per_doc: Optional[int] = None
+    use_tools: bool = True
 
 
 # ============================================================
@@ -71,6 +72,7 @@ def ask(request: AskRequest):
         temperature=request.temperature,
         max_chars_per_doc=request.max_chars_per_doc,
         verbose=False,
+        use_tools=request.use_tools,
     )
 
     return result["answer"]

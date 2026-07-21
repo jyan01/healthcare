@@ -540,6 +540,7 @@ def answer_agent_question(
     verbose: bool = True,
     max_chars_per_doc: int | None = None,
     num_predict: int = 1024,
+    use_tools: bool = True,
 ) -> dict[str, Any]:
     """
     Tool & Agent 방식으로 질문에 답변한다.
@@ -551,7 +552,42 @@ def answer_agent_question(
     4. 문서 검색이 필요하면 Agent가 Tool 호출
     5. 검색 결과를 근거로 최종 답변 생성
     6. 일반 질문은 Tool을 호출하지 않고 직접 답변
+
+    use_tools=False로 호출하면 문서 검색 Tool을 아예 등록하지 않고 LLM에
+    직접 질문한다. 이미 필요한 데이터를 프롬프트에 전부 포함시켜 문서 검색이
+    필요 없는 요청(예: AI 소견 요약)에 사용 — Agent의 Tool 호출 여부 판단에
+    따라 답변 형식이 매번 달라지는 것을 막고 결과를 일관되게 만든다.
     """
+    if not use_tools:
+        llm = ChatOllama(
+            model=llm_model,
+            base_url=ollama_base_url,
+            temperature=temperature,
+            num_predict=num_predict,
+        )
+        response = llm.invoke(
+            [
+                {
+                    "role": "system",
+                    "content": (
+                        "당신은 의료진을 보조하는 한국어 AI 어시스턴트입니다. "
+                        "사용자가 제공한 수치만을 근거로, 확정적인 진단 없이 "
+                        "간결한 한국어 소견을 작성하세요."
+                    ),
+                },
+                {"role": "user", "content": question},
+            ]
+        )
+        answer = response.content if isinstance(response.content, str) else str(response.content)
+        return {
+            "mode": "llm",
+            "question": question,
+            "answer": answer,
+            "context": None,
+            "search_results": [],
+            "messages": [],
+        }
+
     #DB 초기화
     config = get_config()
     engine = get_db_engine(config)
@@ -563,6 +599,29 @@ def answer_agent_question(
         "search_results": [],
         "context": None,
     }
+
+    # ------------------------------------------------------------
+    # 등록된 회원 이름 목록 조회 (LLM이 user_name을 잘못 채우는 경우의 보정용)
+    # 3b 모델은 tool 인자를 가끔 비우거나 질문 전체를 그대로 넣는 등
+    # 신뢰도가 낮으므로, 질문 텍스트에서 실제 등록된 이름을 직접 재탐지한다.
+    # ------------------------------------------------------------
+    def get_known_member_names() -> list[str]:
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text(
+                    "SELECT DISTINCT metadata->>'member_name' AS member_name "
+                    "FROM rag_documents WHERE metadata->>'member_name' IS NOT NULL"
+                )
+            ).fetchall()
+        return [row.member_name for row in rows if row.member_name]
+
+    def resolve_user_name(query: str, user_name: str) -> str:
+        known_names = get_known_member_names()
+        candidate = (user_name or "").strip()
+        if candidate in known_names:
+            return candidate
+        detected = next((name for name in known_names if name and name in query), None)
+        return detected or ""
 
     # ============================================================
     # 1. 문서 검색 Tool 정의
@@ -590,16 +649,18 @@ def answer_agent_question(
             검색된 문서 내용과 출처 정보
         """
 
+        resolved_user_name = resolve_user_name(query, user_name)
+
         if verbose:
             print(f"\n[Tool 호출] search_health_documents")
-            print(f"[검색 질문] {query} / [대상 인물] {user_name!r}")
+            print(f"[검색 질문] {query} / [모델이 전달한 인물] {user_name!r} / [보정된 인물] {resolved_user_name!r}")
 
         search_results = search_similar_documents(
             question=query,
             engine=engine,
             top_k=top_k,
             verbose=False,
-            user_name=user_name,
+            user_name=resolved_user_name,
         )
 
         tool_state["called"] = True

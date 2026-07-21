@@ -18,7 +18,13 @@ export class AiAgentService {
     private readonly configService: ConfigService,
   ) {}
 
-  async ask(question: string): Promise<string> {
+  /**
+   * useTools=false를 넘기면 health-ai가 문서 검색 Agent/Tool을 거치지 않고
+   * LLM에 직접 질문한다. 이미 필요한 데이터를 prompt에 전부 포함시켜
+   * 문서 검색이 필요 없는 요청(AI 소견 요약)에 사용 — 매번 Tool 호출 여부가
+   * 갈려서 답변 형식이 들쭉날쭉해지는 것을 막는다.
+   */
+  async ask(question: string, options?: { useTools?: boolean }): Promise<string> {
     const baseUrl = this.configService.get<string>('AI_AGENT_API_URL');
     try {
       const response = await firstValueFrom(
@@ -26,6 +32,7 @@ export class AiAgentService {
           question,
           top_k: 3,
           temperature: 0.2,
+          use_tools: options?.useTools ?? true,
         }),
       );
       return response.data;

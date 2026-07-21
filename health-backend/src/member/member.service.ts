@@ -137,7 +137,7 @@ export class MemberService {
     ]);
 
     const prompt = this.buildAiSummaryPrompt(member, diseases, recentHealthData);
-    const summary = await this.aiAgentService.ask(prompt);
+    const summary = await this.aiAgentService.ask(prompt, { useTools: false });
     return { summary };
   }
 
@@ -172,7 +172,7 @@ export class MemberService {
     if (lastWeight)
       lines.push(`- 체중: ${lastWeight.weightKg}kg, BMI ${lastWeight.bmi}`);
     lines.push(
-      '위 수치만으로 답변 가능하니 별도 문서 검색 없이, 이 수치를 바탕으로 의료진이 참고할 한국어 소견을 3문장 이내로 간결하게 요약해줘.',
+      '위 수치를 바탕으로 의료진이 참고할 한국어 소견을 3문장 이내로 간결하게 요약해줘.',
     );
     return lines.join('\n');
   }

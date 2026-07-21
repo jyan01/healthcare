@@ -183,7 +183,7 @@ Set-Cookie: refreshToken=eyJhbGciOi...; HttpOnly; SameSite=Lax; Path=/auth/refre
 { "summary": "박지훈님은 최근 심박수가 105bpm으로 다소 높게 측정되었으며, 고혈압·당뇨병 병력을 고려할 때 경과 관찰이 필요합니다..." }
 ```
 
-- `AiAgentService`(1.7의 채팅 API와 동일한 내부 모듈)를 통해 health-ai의 `POST /ask`를 호출한다.
+- `AiAgentService`(1.7의 채팅 API와 동일한 내부 모듈)를 통해 health-ai의 `POST /ask`를 호출한다. 필요한 수치를 프롬프트에 이미 다 담아 보내므로 `use_tools: false`로 호출해 health-ai가 문서 검색 Agent를 거치지 않고 LLM에 직접 질문하게 한다 (RAG 검색 성공/실패에 따라 답변 형식이 매번 달라지는 것을 방지).
 - AI 호출이 실패하면(타임아웃 등) `502`류 오류가 그대로 전달된다 — 이 API는 사용자가 명시적으로 버튼을 눌러 호출하는 것이므로 채팅과 달리 fallback 문구를 만들지 않는다.
 
 ### 1.7 채팅 API (AI Agent 프록시)
@@ -207,7 +207,7 @@ Set-Cookie: refreshToken=eyJhbGciOi...; HttpOnly; SameSite=Lax; Path=/auth/refre
 ```
 
 - health-backend는 인증만 검증하고, 질의/응답 내용에 대한 가공 없이 AI Agent API(`AI_AGENT_API_URL`)에 그대로 프록시한다.
-- **내부 구현**: health-ai는 `/chat`이 아니라 `POST /ask`(`{question, top_k, temperature}` → 답변 문자열)만 제공한다(`health-ai/health-ai-api.py`). 그래서 health-backend의 `AiAgentService`가 `{message}` → `{question}`으로 변환해 `/ask`를 호출하고, 응답 문자열을 `{reply}`로 감싸서 돌려준다. `health-web` 등 클라이언트가 보는 `/chat` 계약 자체는 바뀌지 않는다.
+- **내부 구현**: health-ai는 `/chat`이 아니라 `POST /ask`(`{question, top_k, temperature, use_tools}` → 답변 문자열)만 제공한다(`health-ai/health-ai-api.py`). 그래서 health-backend의 `AiAgentService`가 `{message}` → `{question}`으로 변환해 `/ask`를 호출하고, 응답 문자열을 `{reply}`로 감싸서 돌려준다. `health-web` 등 클라이언트가 보는 `/chat` 계약 자체는 바뀌지 않는다. 채팅은 `use_tools`를 지정하지 않아 기본값 `true`로 호출되며, health-ai의 RAG Agent가 필요 시 문서 검색 Tool을 스스로 판단해 호출한다.
 
 ### 1.8 웹훅 메시지 API (Slack 알림 발송)
 
