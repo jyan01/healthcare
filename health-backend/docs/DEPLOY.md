@@ -142,6 +142,7 @@ Build context가 monorepo 루트 전체가 되므로, `health-web`/`health-mobil
 - `SSH_KEY`(Secret)에 대응하는 공개키가 서버 `~/.ssh/authorized_keys`에 등록되어 있어야 함.
 - `BACKEND_PORT`로 배정된 포트가 서버 방화벽에서 열려 있어야 함.
 - **[고도화]** `sleep` 테이블이 DB에 없다면 최초 1회 [`docs/sleep-table.sql`](./sleep-table.sql)을 공유 DB에 실행해야 함(`synchronize: false`라 TypeORM이 자동 생성하지 않음). 실행 전에는 수면 데이터 수신 시 저장이 실패한다.
+- **[고도화]** `member` 테이블에 `last_alert_ack_at` 컬럼이 없다면 최초 1회 [`docs/member-alert-ack-column.sql`](./member-alert-ack-column.sql)을 공유 DB에 실행해야 함. 실행 전에는 회원상세 조회(`GET /members/:memberId`) 시 컬럼이 없다는 DB 오류가 발생한다.
 
 ## 7. 트러블슈팅
 

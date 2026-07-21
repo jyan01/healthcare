@@ -103,9 +103,9 @@ export class MemberService {
 
     if (requesterMember.memberType === 'P') {
       const summary = this.toSummary(requesterMember);
-      const alertIds = await this.healthDataService.getRecentAlertMemberIds([
-        summary.memberId,
-      ]);
+      const alertIds = await this.healthDataService.getRecentAlertMemberIds(
+        new Map([[summary.memberId, requesterMember.lastAlertAckAt]]),
+      );
       return [{ ...summary, hasRecentAlert: alertIds.has(summary.memberId) }];
     }
 
@@ -118,15 +118,18 @@ export class MemberService {
       qb.andWhere('m.gender = :gender', { gender: filters.gender });
     const members = await qb.orderBy('m.member_id', 'ASC').getMany();
     const summaries = members.map((m) => this.toSummary(m));
-    const alertIds = await this.healthDataService.getRecentAlertMemberIds(
-      summaries.map((s) => s.memberId),
+    const ackTimes = new Map(
+      members.map((m) => [m.memberId, m.lastAlertAckAt]),
     );
+    const alertIds =
+      await this.healthDataService.getRecentAlertMemberIds(ackTimes);
     return summaries.map((s) => ({
       ...s,
       hasRecentAlert: alertIds.has(s.memberId),
     }));
   }
 
+  /** 회원상세 화면을 확인한 시각을 기록 — 이후 이 시각 이전 이상감지는 목록에서 사라진다 */
   async findDetail(memberId: string, requester: JwtPayload) {
     await this.assertAccess(requester, memberId);
     const member = await this.findById(memberId);
@@ -135,6 +138,7 @@ export class MemberService {
     const [diseases, recentHealthData] = await Promise.all([
       this.findDiseases(memberId),
       this.healthDataService.getRecent(memberId),
+      this.memberRepo.update({ memberId }, { lastAlertAckAt: new Date() }),
     ]);
 
     return {

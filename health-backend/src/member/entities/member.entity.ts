@@ -35,4 +35,12 @@ export class Member {
 
   @UpdateDateColumn({ name: 'mod_date', type: 'timestamptz', nullable: true })
   modDate: Date | null;
+
+  /** 회원상세 화면을 마지막으로 조회한 시각 — 이 시각 이후 발생한 이상감지만 회원목록 빨간 점에 표시한다 [고도화] */
+  @Column({
+    name: 'last_alert_ack_at',
+    type: 'timestamptz',
+    nullable: true,
+  })
+  lastAlertAckAt: Date | null;
 }

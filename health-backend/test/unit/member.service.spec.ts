@@ -19,12 +19,17 @@ function buildMember(overrides: Partial<Member> = {}): Member {
     apiKey: 'key_003',
     regDate: new Date(),
     modDate: null,
+    lastAlertAckAt: null,
     ...overrides,
   };
 }
 
 describe('MemberService', () => {
-  let memberRepo: { findOne: jest.Mock; createQueryBuilder: jest.Mock };
+  let memberRepo: {
+    findOne: jest.Mock;
+    createQueryBuilder: jest.Mock;
+    update: jest.Mock;
+  };
   let memberDiseaseRepo: { find: jest.Mock };
   let diseaseCodeRepo: { find: jest.Mock };
   let healthDataService: jest.Mocked<
@@ -67,6 +72,7 @@ describe('MemberService', () => {
     memberRepo = {
       findOne: jest.fn(),
       createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+      update: jest.fn().mockResolvedValue({ affected: 1 }),
     };
     memberDiseaseRepo = { find: jest.fn().mockResolvedValue([]) };
     diseaseCodeRepo = { find: jest.fn().mockResolvedValue([]) };
@@ -127,10 +133,12 @@ describe('MemberService', () => {
 
       const result = await service.findAll(doctor, {});
 
-      expect(healthDataService.getRecentAlertMemberIds).toHaveBeenCalledWith([
-        'user_003',
-        'user_004',
-      ]);
+      expect(healthDataService.getRecentAlertMemberIds).toHaveBeenCalledWith(
+        new Map([
+          ['user_003', null],
+          ['user_004', null],
+        ]),
+      );
       expect(
         result.find((m) => m.memberId === 'user_003')?.hasRecentAlert,
       ).toBe(false);
@@ -173,6 +181,13 @@ describe('MemberService', () => {
 
       expect(result.member.memberId).toBe('user_003');
       expect(healthDataService.getRecent).toHaveBeenCalledWith('user_003');
+      expect(memberRepo.update).toHaveBeenCalledTimes(1);
+      const [whereArg, updateArg] = memberRepo.update.mock.calls[0] as [
+        { memberId: string },
+        { lastAlertAckAt: Date },
+      ];
+      expect(whereArg).toEqual({ memberId: 'user_003' });
+      expect(updateArg.lastAlertAckAt).toBeInstanceOf(Date);
     });
 
     it('환자가 다른 회원의 상세정보를 조회하면 ForbiddenException을 던진다', async () => {

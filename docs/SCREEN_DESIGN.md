@@ -43,7 +43,7 @@
 | 어떤 정보를 보여줄지 | 목록의 각 항목에 환자 사진, 이름, 성별, 생년월일 표시 |
 | 누가 사용할지 | 의사 |
 | 디자인 참조 | `docs/DESIGN-apple.md` |
-| 상태 | HTML 샘플 생성 완료 — `demo/patient-list-web.html`(React 웹, 반응형), `demo/patient-list-mobile.html`(React Native, 세로형). **[고도화]** 최근 24시간 내 이상감지(심박/혈압/혈당) 기록이 있는 환자는 프로필 사진 우측 상단에 빨간 점(`hasRecentAlert`) 표시 — 의사가 목록에서 바로 주의 필요 환자를 확인 가능 |
+| 상태 | HTML 샘플 생성 완료 — `demo/patient-list-web.html`(React 웹, 반응형), `demo/patient-list-mobile.html`(React Native, 세로형). **[고도화]** 최근 24시간 내 이상감지(심박/혈압/혈당) 기록이 있는 환자는 프로필 사진 우측 상단에 빨간 점(`hasRecentAlert`) 표시 — 의사가 목록에서 바로 주의 필요 환자를 확인 가능. 그 환자의 상세화면을 한 번 열어서 확인하면 점이 사라지고, 그 이후 새로 발생한 이상감지에만 다시 표시됨 |
 
 ### 2.3 환자건강 상세화면
 

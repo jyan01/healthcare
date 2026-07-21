@@ -108,7 +108,8 @@ Set-Cookie: refreshToken=eyJhbGciOi...; HttpOnly; SameSite=Lax; Path=/auth/refre
 }
 ```
 
-- **[고도화]** `hasRecentAlert`: 최근 24시간 내 심박/혈압 "이상" 또는 혈당 "high" 기록이 있으면 `true`. `AlertService.isAlertTarget`(Slack 알림 발송 기준)과 동일한 판정 기준을 재사용해, 의사가 목록에서 바로 주의가 필요한 환자를 확인할 수 있게 한다.
+- **[고도화]** `hasRecentAlert`: 최근 24시간 내 심박/혈압 "이상" 또는 혈당 "high" 기록 중, `member.last_alert_ack_at`(회원상세 화면을 마지막으로 조회한 시각) 이후에 발생한 기록이 있으면 `true`. `AlertService.isAlertTarget`(Slack 알림 발송 기준)과 동일한 판정 기준을 재사용한다.
+- **[고도화]** 의사가 1.4(회원 상세 조회) API로 그 환자의 상세화면을 열면 `last_alert_ack_at`이 현재 시각으로 갱신되어, 그 이후로는 이미 확인한 이상감지가 목록에서 사라진다. 상세화면 조회 뒤 새로 발생한 이상감지만 다시 표시된다.
 
 ### 1.4 회원 상세 조회
 
@@ -116,7 +117,7 @@ Set-Cookie: refreshToken=eyJhbGciOi...; HttpOnly; SameSite=Lax; Path=/auth/refre
 | --- | --- |
 | Method / Path | `GET /members/:memberId` |
 | 인증 | 필요 (환자는 본인 `memberId`만 조회 가능) |
-| 설명 | 회원 기본정보 + 최근 7일간 건강데이터(체중/혈압/수면 포함 6종) 조회 |
+| 설명 | 회원 기본정보 + 최근 7일간 건강데이터(체중/혈압/수면 포함 6종) 조회. **[고도화]** 호출 시 부수효과로 `member.last_alert_ack_at`을 현재 시각으로 갱신 (1.3의 `hasRecentAlert` 참고) |
 
 응답
 

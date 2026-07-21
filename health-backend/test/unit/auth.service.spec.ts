@@ -22,6 +22,7 @@ function buildMember(overrides: Partial<Member> = {}): Member {
     apiKey: 'key_003',
     regDate: new Date(),
     modDate: null,
+    lastAlertAckAt: null,
     ...overrides,
   };
 }

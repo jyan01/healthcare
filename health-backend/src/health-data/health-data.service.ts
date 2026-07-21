@@ -174,11 +174,16 @@ export class HealthDataService {
   /**
    * 최근 hours시간 내 이상감지(심박/혈압 "이상", 혈당 "high") 기록이 있는 회원ID 집합을 반환한다.
    * AlertService.isAlertTarget과 동일한 기준을 그대로 SQL 조건으로 적용한다(shared/types.ts 참고).
+   *
+   * ackTimes: 회원ID → 회원상세 화면을 마지막으로 확인한 시각(없으면 null). 그 시각 이후에
+   * 발생한 이상감지만 "아직 확인 안 한 이상감지"로 취급한다 — 의사가 상세화면을 열어 확인하면
+   * 목록의 빨간 점이 사라지고, 그 이후 새로 발생한 이상감지에만 다시 뜬다.
    */
   async getRecentAlertMemberIds(
-    memberIds: string[],
+    ackTimes: Map<string, Date | null>,
     hours = 24,
   ): Promise<Set<string>> {
+    const memberIds = [...ackTimes.keys()];
     if (memberIds.length === 0) return new Set();
     const since = new Date(Date.now() - hours * 60 * 60 * 1000);
     const [heartRateRows, bloodPressureRows, glucoseRows] = await Promise.all([
@@ -188,7 +193,7 @@ export class HealthDataService {
           status: '이상',
           measuredAt: MoreThanOrEqual(since),
         },
-        select: ['memberId'],
+        select: ['memberId', 'measuredAt'],
       }),
       this.bloodPressureRepo.find({
         where: {
@@ -196,7 +201,7 @@ export class HealthDataService {
           status: '이상',
           measuredAt: MoreThanOrEqual(since),
         },
-        select: ['memberId'],
+        select: ['memberId', 'measuredAt'],
       }),
       this.glucoseRepo.find({
         where: {
@@ -204,14 +209,19 @@ export class HealthDataService {
           status: 'high',
           measuredAt: MoreThanOrEqual(since),
         },
-        select: ['memberId'],
+        select: ['memberId', 'measuredAt'],
       }),
     ]);
-    return new Set([
-      ...heartRateRows.map((r) => r.memberId),
-      ...bloodPressureRows.map((r) => r.memberId),
-      ...glucoseRows.map((r) => r.memberId),
-    ]);
+    const result = new Set<string>();
+    for (const row of [
+      ...heartRateRows,
+      ...bloodPressureRows,
+      ...glucoseRows,
+    ]) {
+      const ackAt = ackTimes.get(row.memberId);
+      if (!ackAt || row.measuredAt > ackAt) result.add(row.memberId);
+    }
+    return result;
   }
 
   getRecent(memberId: string, days = RECENT_DAYS_DEFAULT) {
