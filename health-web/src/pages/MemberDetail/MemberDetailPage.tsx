@@ -68,6 +68,11 @@ function toDateTimeLocal(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+function formatDiagDate(iso: string): string {
+  const date = new Date(iso);
+  return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+}
+
 interface NumberSummary {
   count: number;
   min: number;
@@ -302,12 +307,40 @@ function MemberDetailView({ memberId, isDoctor }: { memberId: string; isDoctor: 
                   <span>{detail.gender === 'M' ? '남' : '여'}</span>
                   <span>{formatBirthDate(detail.birthDate)}</span>
                 </div>
+                {detail.diseases.length > 0 && (
+                  <div className={styles.diseaseChips}>
+                    {detail.diseases.map((disease) => (
+                      <span key={disease.diseaseId} className={styles.diseaseChip}>
+                        {disease.nameKr}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className={`${styles.liveIndicator} ${isLive ? '' : styles.liveIndicatorOffline}`}>
                 <span className={styles.liveDot} />
                 {isLive ? '실시간 수신 중' : '연결 중…'}
               </div>
             </div>
+
+            {detail.diseases.some((disease) => disease.diagContent) && (
+              <div className={styles.diseaseMemoCard}>
+                <p className={styles.diseaseMemoTitle}>진단 메모</p>
+                <ul className={styles.diseaseMemoList}>
+                  {detail.diseases
+                    .filter((disease) => disease.diagContent)
+                    .map((disease) => (
+                      <li key={disease.diseaseId} className={styles.diseaseMemoItem}>
+                        <span className={styles.diseaseMemoName}>{disease.nameKr}</span>
+                        <span className={styles.diseaseMemoText}>{disease.diagContent}</span>
+                        {disease.diagDate && (
+                          <span className={styles.diseaseMemoDate}>{formatDiagDate(disease.diagDate)}</span>
+                        )}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            )}
 
             <div className={styles.aiSummaryCard}>
               <div className={styles.aiSummaryHead}>

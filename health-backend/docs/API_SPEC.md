@@ -47,7 +47,9 @@
     "gender": "M",
     "birthDate": "19810512",
     "memberType": "PAT",
-    "diseases": [{ "diseaseId": "HYP", "nameKr": "고혈압" }]
+    "diseases": [
+      { "diseaseId": "HYP", "nameKr": "고혈압", "diagContent": "혈압 추적 관찰 필요, 저염식 권고", "diagDate": "2026-06-01T09:00:00+09:00" }
+    ]
   }
 }
 ```
@@ -123,8 +125,9 @@ Set-Cookie: refreshToken=eyJhbGciOi...; HttpOnly; SameSite=Lax; Path=/auth/refre
     "name": "박지훈",
     "gender": "M",
     "birthDate": "19810512",
-    "diseases": [{ "diseaseId": "HYP", "nameKr": "고혈압" }],
-    "memo": null
+    "diseases": [
+      { "diseaseId": "HYP", "nameKr": "고혈압", "diagContent": "혈압 추적 관찰 필요, 저염식 권고", "diagDate": "2026-06-01T09:00:00+09:00" }
+    ]
   },
   "recentHealthData": {
     "bodyWeight": [{ "weightKg": 88, "bmi": 29.8, "measuredAt": "2026-07-15T08:00:00+09:00" }],
@@ -137,6 +140,7 @@ Set-Cookie: refreshToken=eyJhbGciOi...; HttpOnly; SameSite=Lax; Path=/auth/refre
 ```
 
 - `recentHealthData`의 각 배열은 측정일시(`measuredAt`) 오름차순으로 정렬되며, `HEALTH_DATA_RETENTION_DAYS`(기본 7일) 이내 데이터만 포함한다 (DB 보관 정책상 이 기간을 넘는 데이터는 존재하지 않음).
+- **[고도화]** `diseases[].diagContent`/`diagDate`는 `member_disease` 테이블의 진단 메모/진단일시다 (`docs/REQUIREMENTS.md`의 "보유 질병 정보, 메모 정보" 요구사항). 같은 질병에 진단 기록이 여러 건이면 가장 최근(`diagDate` 기준) 기록만 노출한다. 별도의 회원 단위 `memo` 필드는 존재하지 않는다 — member 테이블에 그런 컬럼이 없다.
 - **표준 흐름(0.1 참고)**: 회원 상세화면 진입 시 이 API를 먼저 호출해 DB에 쌓인 가장 최근 데이터까지로 그래프를 초기화하고, 응답 즉시 2장의 WebSocket에 동일 `memberId`로 연결·구독한다. 이후 신규로 발생하는 값만 WS로 이어받으므로 이 API를 반복 폴링할 필요가 없다.
 
 ### 1.5 회원 건강데이터 조회 (혈압, 혈당, 심박 등)

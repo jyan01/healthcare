@@ -40,7 +40,10 @@ export class MemberService {
   }
 
   async findDiseases(memberId: string): Promise<DiseaseSummary[]> {
-    const rows = await this.memberDiseaseRepo.find({ where: { memberId } });
+    const rows = await this.memberDiseaseRepo.find({
+      where: { memberId },
+      order: { diagDate: 'DESC' },
+    });
     if (rows.length === 0) return [];
 
     const diseaseIds = [...new Set(rows.map((r) => r.diseaseId))];
@@ -50,10 +53,22 @@ export class MemberService {
     const nameMap = new Map(
       diseases.map((d) => [d.diseaseId, d.diseaseNameKr]),
     );
-    return diseaseIds.map((id) => ({
-      diseaseId: id,
-      nameKr: nameMap.get(id) ?? id,
-    }));
+    // rows는 diagDate 내림차순이므로 같은 diseaseId의 첫 등장이 가장 최근 진단 기록이다.
+    const latestByDisease = new Map<string, MemberDisease>();
+    for (const row of rows) {
+      if (!latestByDisease.has(row.diseaseId)) {
+        latestByDisease.set(row.diseaseId, row);
+      }
+    }
+    return diseaseIds.map((id) => {
+      const latest = latestByDisease.get(id);
+      return {
+        diseaseId: id,
+        nameKr: nameMap.get(id) ?? id,
+        diagContent: latest?.diagContent ?? null,
+        diagDate: latest?.diagDate?.toISOString() ?? null,
+      };
+    });
   }
 
   /** 환자는 본인 데이터만, 의사는 전체 회원 데이터에 접근 가능 (요청자의 member_type 기준) */

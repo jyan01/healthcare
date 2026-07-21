@@ -30,6 +30,10 @@ export interface MemberSummary {
 export interface DiseaseSummary {
   diseaseId: string;
   nameKr: string;
+  /** 진단 시 기록된 메모(member_disease.diag_content). 기록 없으면 null */
+  diagContent: string | null;
+  /** 진단일시(ISO 8601). 기록 없으면 null */
+  diagDate: string | null;
 }
 
 export interface HeartRateRecord {
