@@ -1,15 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, LessThan, Repository } from 'typeorm';
+import { Between, In, LessThan, MoreThanOrEqual, Repository } from 'typeorm';
 import { HeartRate } from './entities/heart-rate.entity';
 import { BloodPressure } from './entities/blood-pressure.entity';
 import { BodyWeight } from './entities/body-weight.entity';
 import { Glucose } from './entities/glucose.entity';
 import { StepCount } from './entities/step-count.entity';
+import { Sleep } from './entities/sleep.entity';
 import {
   SimulatorBloodPressureEvent,
   SimulatorGlucoseEvent,
   SimulatorHeartRateEvent,
+  SimulatorSleepEvent,
   SimulatorStepCountEvent,
   SimulatorWeightEvent,
 } from './simulator-event.types';
@@ -18,6 +20,7 @@ import {
   BodyWeightRecord,
   GlucoseRecord,
   HeartRateRecord,
+  SleepRecord,
   StepCountRecord,
   judgeBloodPressureStatus,
   judgeBodyWeightStatus,
@@ -41,6 +44,8 @@ export class HealthDataService {
     private readonly glucoseRepo: Repository<Glucose>,
     @InjectRepository(StepCount)
     private readonly stepCountRepo: Repository<StepCount>,
+    @InjectRepository(Sleep)
+    private readonly sleepRepo: Repository<Sleep>,
   ) {}
 
   async saveHeartRate(
@@ -145,6 +150,70 @@ export class HealthDataService {
     };
   }
 
+  async saveSleep(event: SimulatorSleepEvent): Promise<SleepRecord> {
+    const saved = await this.sleepRepo.save(
+      this.sleepRepo.create({
+        memberId: event.userId,
+        sleepHours: event.sleepHours,
+        quality: event.quality,
+        bedTime: new Date(event.bedTime),
+        wakeTime: new Date(event.wakeTime),
+        measuredAt: new Date(event.timestamp),
+      }),
+    );
+    return {
+      memberId: saved.memberId,
+      sleepHours: saved.sleepHours,
+      quality: event.quality,
+      bedTime: saved.bedTime.toISOString(),
+      wakeTime: saved.wakeTime.toISOString(),
+      measuredAt: saved.measuredAt.toISOString(),
+    };
+  }
+
+  /**
+   * 최근 hours시간 내 이상감지(심박/혈압 "이상", 혈당 "high") 기록이 있는 회원ID 집합을 반환한다.
+   * AlertService.isAlertTarget과 동일한 기준을 그대로 SQL 조건으로 적용한다(shared/types.ts 참고).
+   */
+  async getRecentAlertMemberIds(
+    memberIds: string[],
+    hours = 24,
+  ): Promise<Set<string>> {
+    if (memberIds.length === 0) return new Set();
+    const since = new Date(Date.now() - hours * 60 * 60 * 1000);
+    const [heartRateRows, bloodPressureRows, glucoseRows] = await Promise.all([
+      this.heartRateRepo.find({
+        where: {
+          memberId: In(memberIds),
+          status: '이상',
+          measuredAt: MoreThanOrEqual(since),
+        },
+        select: ['memberId'],
+      }),
+      this.bloodPressureRepo.find({
+        where: {
+          memberId: In(memberIds),
+          status: '이상',
+          measuredAt: MoreThanOrEqual(since),
+        },
+        select: ['memberId'],
+      }),
+      this.glucoseRepo.find({
+        where: {
+          memberId: In(memberIds),
+          status: 'high',
+          measuredAt: MoreThanOrEqual(since),
+        },
+        select: ['memberId'],
+      }),
+    ]);
+    return new Set([
+      ...heartRateRows.map((r) => r.memberId),
+      ...bloodPressureRows.map((r) => r.memberId),
+      ...glucoseRows.map((r) => r.memberId),
+    ]);
+  }
+
   getRecent(memberId: string, days = RECENT_DAYS_DEFAULT) {
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     return this.getByRange(memberId, since, new Date());
@@ -155,7 +224,7 @@ export class HealthDataService {
   }
 
   private async getByRange(memberId: string, startAt: Date, endAt: Date) {
-    const [heartRate, bloodPressure, bodyWeight, glucose, stepCount] =
+    const [heartRate, bloodPressure, bodyWeight, glucose, stepCount, sleep] =
       await Promise.all([
         this.heartRateRepo.find({
           where: { memberId, measuredAt: Between(startAt, endAt) },
@@ -174,6 +243,10 @@ export class HealthDataService {
           order: { measuredAt: 'ASC' },
         }),
         this.stepCountRepo.find({
+          where: { memberId, measuredAt: Between(startAt, endAt) },
+          order: { measuredAt: 'ASC' },
+        }),
+        this.sleepRepo.find({
           where: { memberId, measuredAt: Between(startAt, endAt) },
           order: { measuredAt: 'ASC' },
         }),
@@ -209,6 +282,13 @@ export class HealthDataService {
         totalSteps: r.totalSteps,
         measuredAt: r.measuredAt.toISOString(),
       })),
+      sleep: sleep.map((r) => ({
+        sleepHours: r.sleepHours,
+        quality: r.quality,
+        bedTime: r.bedTime.toISOString(),
+        wakeTime: r.wakeTime.toISOString(),
+        measuredAt: r.measuredAt.toISOString(),
+      })),
     };
   }
 
@@ -220,6 +300,7 @@ export class HealthDataService {
       this.bodyWeightRepo.delete({ measuredAt: LessThan(cutoff) }),
       this.glucoseRepo.delete({ measuredAt: LessThan(cutoff) }),
       this.stepCountRepo.delete({ measuredAt: LessThan(cutoff) }),
+      this.sleepRepo.delete({ measuredAt: LessThan(cutoff) }),
     ]);
     const totalDeleted = results.reduce((sum, r) => sum + (r.affected ?? 0), 0);
     this.logger.log(

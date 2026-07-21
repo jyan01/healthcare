@@ -10,7 +10,12 @@ import { MemberDisease } from './entities/member-disease.entity';
 import { DiseaseCode } from './entities/disease-code.entity';
 import { HealthDataService } from '../health-data/health-data.service';
 import { AiAgentService } from '../ai-agent/ai-agent.service';
-import { DiseaseSummary, JwtPayload, MemberSummary } from '../shared';
+import {
+  DiseaseSummary,
+  JwtPayload,
+  MemberListItem,
+  MemberSummary,
+} from '../shared';
 
 type RecentHealthData = Awaited<ReturnType<HealthDataService['getRecent']>>;
 
@@ -91,13 +96,17 @@ export class MemberService {
   async findAll(
     requester: JwtPayload,
     filters: { name?: string; gender?: string },
-  ): Promise<MemberSummary[]> {
+  ): Promise<MemberListItem[]> {
     const requesterMember = await this.findById(requester.userId);
     if (!requesterMember)
       throw new ForbiddenException('알 수 없는 요청자입니다.');
 
     if (requesterMember.memberType === 'P') {
-      return [this.toSummary(requesterMember)];
+      const summary = this.toSummary(requesterMember);
+      const alertIds = await this.healthDataService.getRecentAlertMemberIds([
+        summary.memberId,
+      ]);
+      return [{ ...summary, hasRecentAlert: alertIds.has(summary.memberId) }];
     }
 
     const qb = this.memberRepo
@@ -108,7 +117,14 @@ export class MemberService {
     if (filters.gender)
       qb.andWhere('m.gender = :gender', { gender: filters.gender });
     const members = await qb.orderBy('m.member_id', 'ASC').getMany();
-    return members.map((m) => this.toSummary(m));
+    const summaries = members.map((m) => this.toSummary(m));
+    const alertIds = await this.healthDataService.getRecentAlertMemberIds(
+      summaries.map((s) => s.memberId),
+    );
+    return summaries.map((s) => ({
+      ...s,
+      hasRecentAlert: alertIds.has(s.memberId),
+    }));
   }
 
   async findDetail(memberId: string, requester: JwtPayload) {
@@ -151,7 +167,11 @@ export class MemberService {
       this.healthDataService.getRecent(memberId),
     ]);
 
-    const prompt = this.buildAiSummaryPrompt(member, diseases, recentHealthData);
+    const prompt = this.buildAiSummaryPrompt(
+      member,
+      diseases,
+      recentHealthData,
+    );
     const summary = await this.aiAgentService.ask(prompt, { useTools: false });
     return { summary };
   }

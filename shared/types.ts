@@ -75,6 +75,18 @@ export interface StepCountRecord {
   measuredAt: string;
 }
 
+/** 수면 품질 — 외부 시뮬레이터가 내려주는 값을 그대로 사용 (docs/DATA_MODEL.md 참고) */
+export type SleepQuality = 'good' | 'fair' | 'poor';
+
+export interface SleepRecord {
+  memberId: string;
+  sleepHours: number;
+  quality: SleepQuality;
+  bedTime: string;
+  wakeTime: string;
+  measuredAt: string;
+}
+
 /** 로그인/토큰 재발급 시점의 회원 정보 (POST /auth/login 응답) */
 export interface AuthMember {
   memberId: string;
@@ -94,8 +106,13 @@ export interface RefreshResponse {
   accessToken: string;
 }
 
+/** GET /members 목록 항목 — hasRecentAlert는 최근 24시간 내 이상감지(심박/혈압/혈당) 여부 */
+export interface MemberListItem extends MemberSummary {
+  hasRecentAlert: boolean;
+}
+
 export interface MembersListResponse {
-  members: MemberSummary[];
+  members: MemberListItem[];
 }
 
 /** GET /members/:memberId 응답의 회원 기본정보 (memberType 없음 — AuthMember와 구분) */
@@ -110,6 +127,7 @@ export type BloodPressureHistoryItem = Omit<BloodPressureRecord, 'memberId'>;
 export type BodyWeightHistoryItem = Omit<BodyWeightRecord, 'memberId'>;
 export type GlucoseHistoryItem = Omit<GlucoseRecord, 'memberId'>;
 export type StepCountHistoryItem = Omit<StepCountRecord, 'memberId'>;
+export type SleepHistoryItem = Omit<SleepRecord, 'memberId'>;
 
 export interface HealthDataHistory {
   heartRate: HeartRateHistoryItem[];
@@ -117,6 +135,7 @@ export interface HealthDataHistory {
   bodyWeight: BodyWeightHistoryItem[];
   glucose: GlucoseHistoryItem[];
   stepCount: StepCountHistoryItem[];
+  sleep: SleepHistoryItem[];
 }
 
 export interface MemberDetailResponse {
@@ -131,6 +150,7 @@ export const HEALTH_WS_EVENT = {
   BODY_WEIGHT: 'bodyWeight',
   GLUCOSE: 'glucose',
   STEP_COUNT: 'stepCount',
+  SLEEP: 'sleep',
 } as const;
 
 /**

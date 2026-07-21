@@ -80,7 +80,7 @@
 ## 🏠 내부 데이터 (Internal Data)
 
 > 아래 내용은 우리 시스템이 자체적으로 설계·소유하는 DB 스키마입니다. 위 "외부 데이터"(healthsim 시뮬레이터)와는 회원ID를 키로 매핑되며, 실시간 이벤트 수신 시 백엔드가 아래 테이블에 저장합니다.
-> 회원관리테이블/질병코드테이블은 `REQUIREMENTS.md` 기준 데이터가 기제공되는 테이블이며, 나머지 5개 실시간 정보 테이블은 외부 이벤트를 저장하기 위한 이력(history) 테이블입니다.
+> 회원관리테이블/질병코드테이블은 `REQUIREMENTS.md` 기준 데이터가 기제공되는 테이블이며, 나머지 실시간 정보 테이블(심박/혈압/체중/혈당/걸음수 5종 + **[고도화]** 수면)은 외부 이벤트를 저장하기 위한 이력(history) 테이블입니다.
 
 ### 개체관계도 (ERD 요약)
 
@@ -93,6 +93,7 @@ erDiagram
     MEMBER ||..o{ BODY_WEIGHT : "회원ID(논리적 FK)"
     MEMBER ||..o{ GLUCOSE : "회원ID(논리적 FK)"
     MEMBER ||..o{ STEP_COUNT : "회원ID(논리적 FK)"
+    MEMBER ||..o{ SLEEP : "회원ID(논리적 FK)"
 
     MEMBER {
         varchar20 회원ID PK
@@ -167,6 +168,16 @@ erDiagram
         number 시퀀스번호 PK
         varchar20 회원ID
         number 누적걸음수
+        datetime 측정일시
+        datetime 생성일시
+    }
+    SLEEP {
+        number 시퀀스번호 PK
+        varchar20 회원ID
+        number 수면시간
+        varchar20 수면품질
+        datetime 취침시각
+        datetime 기상시각
         datetime 측정일시
         datetime 생성일시
     }
@@ -280,13 +291,28 @@ erDiagram
 | 측정일시 | DATETIME | NOT NULL | 외부 이벤트 `stepCount.timestamp` 매핑 |
 | 생성일시 | DATETIME | NOT NULL | 내부 저장(insert) 시각 |
 
+### 9. 회원-수면정보테이블 (물리명 제안: `SLEEP`) — **[고도화]**
+
+| 컬럼명 | 타입 | 제약 | 설명 |
+| --- | --- | --- | --- |
+| 시퀀스번호 | NUMBER | PK | 일련번호 (시퀀스/자동증가) |
+| 회원ID | VARCHAR(20) | 논리적 FK → 회원관리테이블.회원ID | 대상 회원 |
+| 수면시간 | NUMERIC(3,1) | NOT NULL | 외부 이벤트 `sleep.sleepHours` 매핑 |
+| 수면품질 | VARCHAR(20) | | 외부 이벤트 `sleep.quality`(`good`/`fair`/`poor`) 매핑 |
+| 취침시각 | DATETIME | NOT NULL | 외부 이벤트 `sleep.bedTime` 매핑 |
+| 기상시각 | DATETIME | NOT NULL | 외부 이벤트 `sleep.wakeTime` 매핑 |
+| 측정일시 | DATETIME | NOT NULL | 외부 이벤트 `sleep.timestamp` 매핑 |
+| 생성일시 | DATETIME | NOT NULL | 내부 저장(insert) 시각 |
+
+기존 5개 테이블과 달리 `synchronize: false`라 TypeORM이 자동 생성하지 않으므로, 배포 전 [`health-backend/docs/sleep-table.sql`](../health-backend/docs/sleep-table.sql)을 공유 DB에 1회 실행해야 한다.
+
 ### 관계 요약 (Relationships)
 
 | 관계 | 카디널리티 | 비고 |
 | --- | --- | --- |
 | 회원관리테이블 — 회원-질병관리테이블 | 1 : 0..N | 회원ID FK. ERD상 명시적 관계선 있음 |
 | 질병코드테이블 — 회원-질병관리테이블 | 1 : 0..N | 질병ID FK. ERD상 명시적 관계선 있음 |
-| 회원관리테이블 — 회원-심박/혈압/체중/혈당/걸음수정보테이블 | 1 : 0..N (논리적) | ERD 다이어그램에는 관계선이 그려져 있지 않으나, 각 테이블의 회원ID는 회원관리테이블.회원ID를 참조하는 논리적 FK로 취급 |
+| 회원관리테이블 — 회원-심박/혈압/체중/혈당/걸음수/수면정보테이블 | 1 : 0..N (논리적) | ERD 다이어그램에는 관계선이 그려져 있지 않으나, 각 테이블의 회원ID는 회원관리테이블.회원ID를 참조하는 논리적 FK로 취급 |
 
 ### 외부 이벤트 ↔ 내부 테이블 매핑
 
@@ -297,5 +323,6 @@ erDiagram
 | `weight` | 회원-체중관리테이블 |
 | `glucose` | 회원-혈당정보테이블 |
 | `stepCount` | 회원-걸음수정보테이블 |
+| `sleep` | 회원-수면정보테이블 (**[고도화]**) |
 | `userProfile.diseases` | 회원-질병관리테이블 (실제 진단 등록은 별도 화면/프로세스 필요, 여기서는 참고용 매핑) |
 | (해당 없음) | 회원관리테이블, 질병코드테이블 — 기제공 데이터 |

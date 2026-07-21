@@ -202,6 +202,61 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 20px;
+  margin-bottom: 24px;
+}
+
+/* 수면 — 고도화 (하루 1회 수신되는 값이라 MetricCard 라인차트 대신 요약 카드로 표시) */
+.sleepCard {
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+
+.sleepHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.sleepTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.sleepValue {
+  font-variant-numeric: tabular-nums;
+}
+.sleepNum {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.374px;
+  color: var(--ink);
+}
+.sleepUnit {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-muted-48);
+  margin-left: 3px;
+}
+
+.sleepTimes {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: -0.12px;
+  color: var(--ink-muted-48);
+}
+
+.sleepEmpty {
+  font-size: 14px;
+  color: var(--ink-muted-48);
+  margin: 8px 0 0;
 }
 
 .stateMessage {

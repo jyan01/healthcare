@@ -4,6 +4,7 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { GlobalNav } from '../../components/GlobalNav/GlobalNav';
 import { CHART_WINDOW, MetricCard } from '../../components/MetricCard/MetricCard';
 import type { MetricPoint } from '../../components/MetricCard/MetricCard';
+import { StatusBadge } from '../../components/StatusBadge/StatusBadge';
 import { useAuth } from '../../context/useAuth';
 import { getAccessToken } from '../../api/client';
 import { getMemberAiSummary, getMemberDetail, getMemberHealthDataByPeriod } from '../../api/members';
@@ -14,9 +15,17 @@ import {
   bodyWeightStatusToBadgeLevel,
   formatBirthDate,
   glucoseStatusToBadgeLevel,
+  sleepQualityToBadgeLevel,
   vitalStatusToBadgeLevel,
 } from '../../shared';
-import type { BodyWeightStatus, GlucoseStatus, MemberDetail as MemberDetailInfo, VitalStatus } from '../../shared';
+import type {
+  BodyWeightStatus,
+  GlucoseStatus,
+  MemberDetail as MemberDetailInfo,
+  SleepHistoryItem,
+  SleepQuality,
+  VitalStatus,
+} from '../../shared';
 import styles from './MemberDetailPage.module.css';
 
 const PRIMARY = '#0066cc';
@@ -59,6 +68,16 @@ function glucoseBadge(status: GlucoseStatus) {
 
 function weightBadge(status: BodyWeightStatus) {
   return { level: bodyWeightStatusToBadgeLevel(status), text: status };
+}
+
+function sleepQualityBadge(quality: SleepQuality) {
+  const text = quality === 'good' ? '좋음' : quality === 'fair' ? '보통' : '나쁨';
+  return { level: sleepQualityToBadgeLevel(quality), text };
+}
+
+function formatClockTime(iso: string): string {
+  const date = new Date(iso);
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
 function initials(name: string): string {
@@ -129,6 +148,7 @@ function MemberDetailView({ memberId, isDoctor }: { memberId: string; isDoctor: 
   const [bloodPressureStatus, setBloodPressureStatus] = useState<VitalStatus | null>(null);
   const [glucoseStatus, setGlucoseStatus] = useState<GlucoseStatus | null>(null);
   const [weightStatus, setWeightStatus] = useState<BodyWeightStatus | null>(null);
+  const [latestSleep, setLatestSleep] = useState<SleepHistoryItem | null>(null);
   const [isLive, setIsLive] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -216,6 +236,8 @@ function MemberDetailView({ memberId, isDoctor }: { memberId: string; isDoctor: 
         if (lastGlucose) setGlucoseStatus(lastGlucose.status);
         const lastWeight = recentHealthData.bodyWeight.at(-1);
         if (lastWeight) setWeightStatus(lastWeight.status);
+        const lastSleep = recentHealthData.sleep.at(-1);
+        if (lastSleep) setLatestSleep(lastSleep);
 
         setReadyMemberId(memberId);
       })
@@ -302,6 +324,11 @@ function MemberDetailView({ memberId, isDoctor }: { memberId: string; isDoctor: 
         ...prev,
         stepCount: appendAndTrim(prev.stepCount, { measuredAt: record.measuredAt, values: [record.totalSteps] }),
       }));
+    });
+
+    socket.on('sleep', (record) => {
+      if (record.memberId !== memberId) return;
+      setLatestSleep(record);
     });
 
     return () => {
@@ -450,6 +477,26 @@ function MemberDetailView({ memberId, isDoctor }: { memberId: string; isDoctor: 
               />
             </div>
 
+            <div className={styles.sleepCard}>
+              <div className={styles.sleepHead}>
+                <p className={styles.sleepTitle}>수면</p>
+                {latestSleep && <StatusBadge {...sleepQualityBadge(latestSleep.quality)} />}
+              </div>
+              {latestSleep ? (
+                <>
+                  <div className={styles.sleepValue}>
+                    <span className={styles.sleepNum}>{latestSleep.sleepHours}</span>
+                    <span className={styles.sleepUnit}>시간</span>
+                  </div>
+                  <div className={styles.sleepTimes}>
+                    취침 {formatClockTime(latestSleep.bedTime)} · 기상 {formatClockTime(latestSleep.wakeTime)}
+                  </div>
+                </>
+              ) : (
+                <p className={styles.sleepEmpty}>아직 수신된 수면 데이터가 없습니다.</p>
+              )}
+            </div>
+
             <div className={styles.periodSection}>
               <h2 className={styles.sectionTitle}>기간별 조회</h2>
               <form className={styles.periodForm} onSubmit={handlePeriodQuery}>
@@ -528,6 +575,12 @@ function MemberDetailView({ memberId, isDoctor }: { memberId: string; isDoctor: 
                     <div className={styles.periodResultLabel}>걸음수</div>
                     <div className={styles.periodResultStat}>
                       {formatSummary(summarizeNumbers(periodResult.stepCount.map((r) => r.totalSteps)), '보')}
+                    </div>
+                  </div>
+                  <div className={styles.periodResultCard}>
+                    <div className={styles.periodResultLabel}>수면</div>
+                    <div className={styles.periodResultStat}>
+                      {formatSummary(summarizeNumbers(periodResult.sleep.map((r) => r.sleepHours)), '시간', 1)}
                     </div>
                   </div>
                 </div>

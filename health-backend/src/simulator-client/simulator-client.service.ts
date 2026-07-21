@@ -17,6 +17,7 @@ import {
   SimulatorBloodPressureEvent,
   SimulatorGlucoseEvent,
   SimulatorHeartRateEvent,
+  SimulatorSleepEvent,
   SimulatorStepCountEvent,
   SimulatorWeightEvent,
 } from '../health-data/simulator-event.types';
@@ -96,6 +97,9 @@ export class SimulatorClientService implements OnModuleInit, OnModuleDestroy {
     socket.on('stepCount', (msg: SimulatorEnvelope<SimulatorStepCountEvent>) =>
       this.onStepCount(member, msg.data),
     );
+    socket.on('sleep', (msg: SimulatorEnvelope<SimulatorSleepEvent>) =>
+      this.onSleep(member, msg.data),
+    );
 
     this.connections.set(member.memberId, socket);
   }
@@ -171,6 +175,18 @@ export class SimulatorClientService implements OnModuleInit, OnModuleDestroy {
     this.healthGateway.emitToMember(
       member.memberId,
       HEALTH_WS_EVENT.STEP_COUNT,
+      record,
+    );
+  }
+
+  private async onSleep(
+    member: Member,
+    event: SimulatorSleepEvent,
+  ): Promise<void> {
+    const record = await this.healthDataService.saveSleep(event);
+    this.healthGateway.emitToMember(
+      member.memberId,
+      HEALTH_WS_EVENT.SLEEP,
       record,
     );
   }

@@ -3,7 +3,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { GlobalNav } from '../../components/GlobalNav/GlobalNav';
 import { useAuth } from '../../context/useAuth';
 import { getMembers } from '../../api/members';
-import { formatBirthDate, type MemberSummary } from '../../shared';
+import { formatBirthDate, type MemberListItem } from '../../shared';
 import styles from './MemberListPage.module.css';
 
 type GenderFilter = 'all' | 'M' | 'F';
@@ -16,7 +16,7 @@ export function MemberListPage() {
   const { member } = useAuth();
   const [nameQuery, setNameQuery] = useState('');
   const [gender, setGender] = useState<GenderFilter>('all');
-  const [members, setMembers] = useState<MemberSummary[]>([]);
+  const [members, setMembers] = useState<MemberListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -95,7 +95,10 @@ export function MemberListPage() {
 
       {members.map((patient) => (
         <Link key={patient.memberId} className={styles.patientRow} to={`/members/${patient.memberId}`}>
-          <span className={styles.avatar}>{initials(patient.name)}</span>
+          <span className={styles.avatar}>
+            {initials(patient.name)}
+            {patient.hasRecentAlert && <span className={styles.alertDot} title="최근 24시간 내 이상감지" />}
+          </span>
           <span className={styles.name}>{patient.name}</span>
           <span className={styles.gender}>{patient.gender === 'M' ? '남' : '여'}</span>
           <span className={styles.birth}>{formatBirthDate(patient.birthDate)}</span>

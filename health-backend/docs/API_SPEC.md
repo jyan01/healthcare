@@ -103,10 +103,12 @@ Set-Cookie: refreshToken=eyJhbGciOi...; HttpOnly; SameSite=Lax; Path=/auth/refre
 ```json
 {
   "members": [
-    { "memberId": "user_003", "name": "박지훈", "gender": "M", "birthDate": "19810512" }
+    { "memberId": "user_003", "name": "박지훈", "gender": "M", "birthDate": "19810512", "hasRecentAlert": true }
   ]
 }
 ```
+
+- **[고도화]** `hasRecentAlert`: 최근 24시간 내 심박/혈압 "이상" 또는 혈당 "high" 기록이 있으면 `true`. `AlertService.isAlertTarget`(Slack 알림 발송 기준)과 동일한 판정 기준을 재사용해, 의사가 목록에서 바로 주의가 필요한 환자를 확인할 수 있게 한다.
 
 ### 1.4 회원 상세 조회
 
@@ -134,13 +136,15 @@ Set-Cookie: refreshToken=eyJhbGciOi...; HttpOnly; SameSite=Lax; Path=/auth/refre
     "bloodPressure": [{ "systolic": 138, "diastolic": 88, "status": "주의", "measuredAt": "2026-07-15T22:00:00+09:00" }],
     "heartRate": [{ "heartRate": 78, "status": "정상", "measuredAt": "2026-07-15T22:07:15+09:00" }],
     "glucose": [{ "glucoseValue": 128, "status": "elevated", "measuredAt": "2026-07-15T14:00:00+09:00" }],
-    "stepCount": [{ "totalSteps": 4231, "measuredAt": "2026-07-15T22:07:15+09:00" }]
+    "stepCount": [{ "totalSteps": 4231, "measuredAt": "2026-07-15T22:07:15+09:00" }],
+    "sleep": [{ "sleepHours": 6.8, "quality": "fair", "bedTime": "2026-07-15T00:12:00+09:00", "wakeTime": "2026-07-15T07:00:00+09:00", "measuredAt": "2026-07-15T07:00:00+09:00" }]
   }
 }
 ```
 
 - `recentHealthData`의 각 배열은 측정일시(`measuredAt`) 오름차순으로 정렬되며, `HEALTH_DATA_RETENTION_DAYS`(기본 7일) 이내 데이터만 포함한다 (DB 보관 정책상 이 기간을 넘는 데이터는 존재하지 않음).
 - **[고도화]** `diseases[].diagContent`/`diagDate`는 `member_disease` 테이블의 진단 메모/진단일시다 (`docs/REQUIREMENTS.md`의 "보유 질병 정보, 메모 정보" 요구사항). 같은 질병에 진단 기록이 여러 건이면 가장 최근(`diagDate` 기준) 기록만 노출한다. 별도의 회원 단위 `memo` 필드는 존재하지 않는다 — member 테이블에 그런 컬럼이 없다.
+- **[고도화]** `sleep`은 시뮬레이터가 하루 1회(기상 시각 07시)만 보내주는 데이터라 다른 5종과 달리 배열 길이가 보통 0~7건이다. `quality`는 `good`/`fair`/`poor`.
 - **표준 흐름(0.1 참고)**: 회원 상세화면 진입 시 이 API를 먼저 호출해 DB에 쌓인 가장 최근 데이터까지로 그래프를 초기화하고, 응답 즉시 2장의 WebSocket에 동일 `memberId`로 연결·구독한다. 이후 신규로 발생하는 값만 WS로 이어받으므로 이 API를 반복 폴링할 필요가 없다.
 
 ### 1.5 회원 건강데이터 조회 (혈압, 혈당, 심박 등)
@@ -166,11 +170,12 @@ Set-Cookie: refreshToken=eyJhbGciOi...; HttpOnly; SameSite=Lax; Path=/auth/refre
   "bloodPressure": [{ "systolic": 138, "diastolic": 88, "status": "주의", "measuredAt": "2026-07-15T22:00:00+09:00" }],
   "bodyWeight": [{ "weightKg": 88, "bmi": 29.8, "skeletalMuscleMassKg": 34.2, "bodyFatPercentage": 24.1, "measuredAt": "2026-07-15T08:00:00+09:00" }],
   "glucose": [{ "glucoseValue": 128, "status": "elevated", "measuredAt": "2026-07-15T14:00:00+09:00" }],
-  "stepCount": [{ "totalSteps": 4231, "measuredAt": "2026-07-15T22:07:15+09:00" }]
+  "stepCount": [{ "totalSteps": 4231, "measuredAt": "2026-07-15T22:07:15+09:00" }],
+  "sleep": [{ "sleepHours": 6.8, "quality": "fair", "bedTime": "2026-07-15T00:12:00+09:00", "wakeTime": "2026-07-15T07:00:00+09:00", "measuredAt": "2026-07-15T07:00:00+09:00" }]
 }
 ```
 
-- 지정 기간(`startAt`~`endAt`) 내 데이터를 5종 테이블 각각에서 조건에 맞는 전체 로우로 반환한다 (DB 보관 정책상 최대 7일 이내 범위만 존재).
+- 지정 기간(`startAt`~`endAt`) 내 데이터를 6종 테이블 각각에서 조건에 맞는 전체 로우로 반환한다 (DB 보관 정책상 최대 7일 이내 범위만 존재). **[고도화]** `sleep`이 6번째로 추가됨.
 - health-web의 회원상세 화면 "기간별 조회" 섹션이 이 API를 사용한다 (`health-web/docs/ARCHITECTURE.md` 참고).
 
 ### 1.6 회원 AI 소견 요약
@@ -279,6 +284,7 @@ socket.emit('subscribe', { memberId: 'user_003' });
 | `bodyWeight` | 체중/BMI/골격근량/체지방률 (`{ memberId, weightKg, bmi, skeletalMuscleMassKg, bodyFatPercentage, measuredAt }`) |
 | `glucose` | 혈당 (`{ memberId, glucoseValue, status, measuredAt }`) |
 | `stepCount` | 누적 걸음수 (`{ memberId, totalSteps, measuredAt }`) |
+| `sleep` | 수면 (`{ memberId, sleepHours, quality, bedTime, wakeTime, measuredAt }`, **[고도화]**) — 시뮬레이터가 하루 1회(기상 시각 07시)만 전송 |
 
 ```json
 { "event": "heartRate", "data": { "memberId": "user_003", "heartRate": 78, "status": "정상", "measuredAt": "2026-07-15T22:07:15+09:00" } }

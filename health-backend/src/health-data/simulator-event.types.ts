@@ -40,3 +40,13 @@ export interface SimulatorStepCountEvent {
   stepCount: number;
   dailyReset: boolean;
 }
+
+export interface SimulatorSleepEvent {
+  timestamp: string;
+  userId: string;
+  sleepHours: number;
+  quality: 'good' | 'fair' | 'poor';
+  bedTime: string;
+  wakeTime: string;
+  source: string;
+}

@@ -4,6 +4,7 @@ import type {
   BodyWeightRecord,
   GlucoseRecord,
   HeartRateRecord,
+  SleepRecord,
   StepCountRecord,
 } from '../shared';
 
@@ -13,6 +14,7 @@ interface HealthServerToClientEvents {
   bodyWeight: (record: BodyWeightRecord) => void;
   glucose: (record: GlucoseRecord) => void;
   stepCount: (record: StepCountRecord) => void;
+  sleep: (record: SleepRecord) => void;
   error: (payload: { code: string }) => void;
 }
 

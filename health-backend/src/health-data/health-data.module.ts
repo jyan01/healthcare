@@ -5,6 +5,7 @@ import { BloodPressure } from './entities/blood-pressure.entity';
 import { BodyWeight } from './entities/body-weight.entity';
 import { Glucose } from './entities/glucose.entity';
 import { StepCount } from './entities/step-count.entity';
+import { Sleep } from './entities/sleep.entity';
 import { HealthDataService } from './health-data.service';
 import { HealthDataCleanupService } from './health-data-cleanup.service';
 
@@ -16,6 +17,7 @@ import { HealthDataCleanupService } from './health-data-cleanup.service';
       BodyWeight,
       Glucose,
       StepCount,
+      Sleep,
     ]),
   ],
   providers: [HealthDataService, HealthDataCleanupService],

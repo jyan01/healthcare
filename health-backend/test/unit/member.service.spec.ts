@@ -28,7 +28,10 @@ describe('MemberService', () => {
   let memberDiseaseRepo: { find: jest.Mock };
   let diseaseCodeRepo: { find: jest.Mock };
   let healthDataService: jest.Mocked<
-    Pick<HealthDataService, 'getRecent' | 'getByPeriod'>
+    Pick<
+      HealthDataService,
+      'getRecent' | 'getByPeriod' | 'getRecentAlertMemberIds'
+    >
   >;
   let aiAgentService: jest.Mocked<Pick<AiAgentService, 'ask'>>;
   let queryBuilder: {
@@ -74,8 +77,10 @@ describe('MemberService', () => {
         bodyWeight: [],
         glucose: [],
         stepCount: [],
+        sleep: [],
       }),
       getByPeriod: jest.fn().mockResolvedValue({}),
+      getRecentAlertMemberIds: jest.fn().mockResolvedValue(new Set()),
     };
     aiAgentService = {
       ask: jest.fn().mockResolvedValue('AI 요약 결과'),
@@ -108,6 +113,32 @@ describe('MemberService', () => {
       expect(result).toHaveLength(2);
     });
 
+    it('최근 이상감지가 있는 회원은 hasRecentAlert가 true로 표시된다', async () => {
+      memberRepo.findOne.mockResolvedValue(
+        buildMember({ memberId: 'admin', memberType: 'D' }),
+      );
+      queryBuilder.getMany.mockResolvedValue([
+        buildMember(),
+        buildMember({ memberId: 'user_004' }),
+      ]);
+      healthDataService.getRecentAlertMemberIds.mockResolvedValue(
+        new Set(['user_004']),
+      );
+
+      const result = await service.findAll(doctor, {});
+
+      expect(healthDataService.getRecentAlertMemberIds).toHaveBeenCalledWith([
+        'user_003',
+        'user_004',
+      ]);
+      expect(
+        result.find((m) => m.memberId === 'user_003')?.hasRecentAlert,
+      ).toBe(false);
+      expect(
+        result.find((m) => m.memberId === 'user_004')?.hasRecentAlert,
+      ).toBe(true);
+    });
+
     it('환자가 요청하면 본인 정보 1건만 반환한다', async () => {
       memberRepo.findOne.mockResolvedValue(buildMember());
 
@@ -119,6 +150,7 @@ describe('MemberService', () => {
           name: '박지훈',
           gender: 'M',
           birthDate: '19810217',
+          hasRecentAlert: false,
         },
       ]);
       expect(memberRepo.createQueryBuilder).not.toHaveBeenCalled();
@@ -210,18 +242,24 @@ describe('MemberService', () => {
       memberRepo.findOne.mockResolvedValue(buildMember());
       healthDataService.getRecent.mockResolvedValue({
         heartRate: [
-          { heartRate: 105, status: '이상', remark: null, measuredAt: '2026-07-21T00:00:00Z' },
+          {
+            heartRate: 105,
+            status: '이상',
+            remark: null,
+            measuredAt: '2026-07-21T00:00:00Z',
+          },
         ],
         bloodPressure: [],
         bodyWeight: [],
         glucose: [],
         stepCount: [],
+        sleep: [],
       });
 
       const result = await service.getAiSummary('user_003', patient);
 
       expect(aiAgentService.ask).toHaveBeenCalledTimes(1);
-      const prompt = aiAgentService.ask.mock.calls[0][0] as string;
+      const prompt = aiAgentService.ask.mock.calls[0][0];
       expect(prompt).toContain('105bpm');
       expect(result).toEqual({ summary: 'AI 요약 결과' });
     });

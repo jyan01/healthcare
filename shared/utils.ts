@@ -1,7 +1,7 @@
 // 백엔드(health-backend)·웹(health-web)·앱(health-mobile)이 공유하는 순수 로직.
 // health-ai(Python)는 제외. 타입은 shared/types.ts를 참고.
 
-import type { BodyWeightStatus, GlucoseStatus, VitalStatus } from './types';
+import type { BodyWeightStatus, GlucoseStatus, SleepQuality, VitalStatus } from './types';
 
 /** 상태 배지 표시 색상 단계 (정상/주의/위험) */
 export type BadgeLevel = 'good' | 'warning' | 'critical';
@@ -21,6 +21,12 @@ export function glucoseStatusToBadgeLevel(status: GlucoseStatus): BadgeLevel {
 export function bodyWeightStatusToBadgeLevel(status: BodyWeightStatus): BadgeLevel {
   if (status === '비만') return 'critical';
   if (status === '과체중' || status === '저체중') return 'warning';
+  return 'good';
+}
+
+export function sleepQualityToBadgeLevel(quality: SleepQuality): BadgeLevel {
+  if (quality === 'poor') return 'critical';
+  if (quality === 'fair') return 'warning';
   return 'good';
 }
 
