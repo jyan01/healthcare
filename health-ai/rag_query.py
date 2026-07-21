@@ -94,7 +94,11 @@ def search_similar_documents(
     verbose : bool
         True면 검색 과정과 결과를 출력
     user_name : str | None
-        지정하면 파일명(source)에 해당 이름이 포함된 문서로만 검색 범위를 좁힌다.
+        지정하면 그 회원ID(예: "user_005")의 문서로만 검색 범위를 좁힌다. 한글 이름이
+        아니라 회원ID(영문/숫자)로 필터링한다 — source/metadata의 한글 컬럼 값이
+        일부 행에서 인코딩 문제로 깨져 있어(DB 데이터 자체 문제) 한글로 필터링하면
+        정상적으로 등록된 이름조차 매칭이 안 되는 경우가 있었기 때문. 영문 ID는
+        인코딩 문제의 영향을 받지 않아 항상 정확히 매칭된다.
         (없으면 전체 문서 대상 검색 — 특정인 대상이 아닌 공용 참고문서 질문에 사용)
 
     Returns
@@ -159,7 +163,7 @@ def search_similar_documents(
         embedding <=> CAST(:query_vector AS vector) AS distance,
         1 - (embedding <=> CAST(:query_vector AS vector)) AS similarity
     FROM rag_documents
-    WHERE (:user_name = '' OR source ILIKE '%' || :user_name || '%')
+    WHERE (:user_name = '' OR metadata->>'member_id' = :user_name)
     ORDER BY embedding <=> CAST(:query_vector AS vector)
     LIMIT :top_k;
     """
@@ -601,27 +605,40 @@ def answer_agent_question(
     }
 
     # ------------------------------------------------------------
-    # 등록된 회원 이름 목록 (LLM이 user_name을 잘못 채우는 경우의 보정용)
-    # 3b 모델은 tool 인자를 가끔 비우거나 질문 전체를 그대로 넣는 등
-    # 신뢰도가 낮으므로, 질문 텍스트에서 실제 등록된 이름을 직접 재탐지한다.
+    # 등록된 회원 이름 → 회원ID 고정 매핑 (LLM이 user_name을 잘못 채우는
+    # 경우의 보정 + DB 한글 컬럼 인코딩 문제를 피하기 위한 용도).
     #
-    # DB(rag_documents.metadata->>'member_name')에서 동적으로 읽어오지 않고
-    # 고정 목록으로 둔다 — 일부 행의 한글 텍스트가 인코딩 문제로 깨져 있으면
-    # (예: "박지훈" 조회 시 이름이 매칭 안 돼 필터 없이 전체 검색으로 새서
-    # 전혀 다른 사람의 문서가 섞이는 사고로 이어졌다) 그 깨진 값과는 절대
-    # 매칭되지 않기 때문. docs/ 폴더의 회원 PDF 10명과 1:1로 대응한다.
+    # 1) 3b 모델은 tool 인자를 가끔 비우거나 질문 전체를 그대로 넣는 등
+    #    신뢰도가 낮으므로, 질문 텍스트에서 실제 등록된 이름을 직접 재탐지한다.
+    # 2) 검색 필터는 한글 이름이 아니라 이 매핑으로 얻은 영문 회원ID
+    #    (예: "user_005")를 사용한다 — rag_documents의 source/metadata
+    #    한글 컬럼 값이 일부 행에서 인코딩 문제로 깨져 있어(DB 데이터 자체
+    #    문제), 한글로 대조하면 "정하늘"처럼 정상 등록된 이름조차 매칭이
+    #    안 돼 필터 없이 전체 검색으로 새서 다른 환자 문서가 섞이거나,
+    #    반대로 전혀 결과가 없다고 나오는 사고로 이어졌다. 영문 ID는
+    #    인코딩 문제의 영향을 받지 않아 항상 정확히 매칭된다.
+    # docs/ 폴더의 회원 PDF 10명과 1:1로 대응한다.
     # ------------------------------------------------------------
-    KNOWN_MEMBER_NAMES = [
-        "김민준", "이서연", "박지훈", "최수빈", "정하늘",
-        "한지민", "김도윤", "이민지", "오성민", "서예진",
-    ]
+    MEMBER_NAME_TO_ID = {
+        "김민준": "user_001",
+        "이서연": "user_002",
+        "박지훈": "user_003",
+        "최수빈": "user_004",
+        "정하늘": "user_005",
+        "한지민": "user_006",
+        "김도윤": "user_007",
+        "이민지": "user_008",
+        "오성민": "user_009",
+        "서예진": "user_010",
+    }
+    KNOWN_MEMBER_NAMES = list(MEMBER_NAME_TO_ID.keys())
 
-    def resolve_user_name(query: str, user_name: str) -> str:
+    def resolve_member_id(query: str, user_name: str) -> str:
         candidate = (user_name or "").strip()
-        if candidate in KNOWN_MEMBER_NAMES:
-            return candidate
+        if candidate in MEMBER_NAME_TO_ID:
+            return MEMBER_NAME_TO_ID[candidate]
         detected = next((name for name in KNOWN_MEMBER_NAMES if name in query), None)
-        return detected or ""
+        return MEMBER_NAME_TO_ID.get(detected, "")
 
     # ============================================================
     # 1. 문서 검색 Tool 정의
@@ -649,22 +666,22 @@ def answer_agent_question(
             검색된 문서 내용과 출처 정보
         """
 
-        resolved_user_name = resolve_user_name(query, user_name)
+        resolved_member_id = resolve_member_id(query, user_name)
         # 특정 인물로 좁혀진 검색은 이미 그 사람 문서로만 필터링되므로,
         # top_k를 늘려 검진결과/처방전/의사소견 등 문서 전체를 최대한 가져온다.
         # (환자 1인당 문서가 3페이지 내외, chunk 6~7개 정도라 12면 보통 전체가 들어온다)
-        effective_top_k = 12 if resolved_user_name else top_k
+        effective_top_k = 12 if resolved_member_id else top_k
 
         if verbose:
             print(f"\n[Tool 호출] search_health_documents")
-            print(f"[검색 질문] {query} / [모델이 전달한 인물] {user_name!r} / [보정된 인물] {resolved_user_name!r}")
+            print(f"[검색 질문] {query} / [모델이 전달한 인물] {user_name!r} / [보정된 회원ID] {resolved_member_id!r}")
 
         search_results = search_similar_documents(
             question=query,
             engine=engine,
             top_k=effective_top_k,
             verbose=False,
-            user_name=resolved_user_name,
+            user_name=resolved_member_id,
         )
 
         tool_state["called"] = True
