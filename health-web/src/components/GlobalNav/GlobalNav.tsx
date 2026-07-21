@@ -8,7 +8,7 @@ export function GlobalNav() {
 
   return (
     <div className={styles.nav}>
-      HEALTH ADMIN — WEB
+      <span className={styles.brand}>HEALTH ADMIN — WEB</span>
       {member && pathname !== '/chat' && (
         <Link className={styles.link} to="/chat">
           <svg className={styles.linkIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

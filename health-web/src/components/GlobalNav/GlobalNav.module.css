@@ -11,6 +11,12 @@
   letter-spacing: -0.12px;
 }
 
+.brand {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.16px;
+}
+
 .link {
   position: absolute;
   right: 16px;

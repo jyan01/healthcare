@@ -76,6 +76,7 @@ def search_similar_documents(
     top_k: int = 3,
     preview_chars: int = 700,
     verbose: bool = True,
+    user_name: str | None = None,
 ):
     """
     질문을 임베딩한 뒤 pgvector에서 유사 문서를 검색한다.
@@ -92,6 +93,9 @@ def search_similar_documents(
         출력 시 content 미리보기 글자 수
     verbose : bool
         True면 검색 과정과 결과를 출력
+    user_name : str | None
+        지정하면 파일명(source)에 해당 이름이 포함된 문서로만 검색 범위를 좁힌다.
+        (없으면 전체 문서 대상 검색 — 특정인 대상이 아닌 공용 참고문서 질문에 사용)
 
     Returns
     -------
@@ -155,6 +159,7 @@ def search_similar_documents(
         embedding <=> CAST(:query_vector AS vector) AS distance,
         1 - (embedding <=> CAST(:query_vector AS vector)) AS similarity
     FROM rag_documents
+    WHERE (:user_name = '' OR source ILIKE '%' || :user_name || '%')
     ORDER BY embedding <=> CAST(:query_vector AS vector)
     LIMIT :top_k;
     """
@@ -165,6 +170,7 @@ def search_similar_documents(
             {
                 "query_vector": question_vector_text,
                 "top_k": top_k,
+                "user_name": user_name or "",
             },
         )
 
@@ -574,6 +580,11 @@ def answer_agent_question(
 
         Args:
             query: 문서에서 검색할 자연어 질문
+            user_name: 질문에 등장하는 사람의 이름. 반드시 질문 텍스트에서 그대로
+                추출해서 전달한다 (예: "박지훈의 건강 상태를 알려줘" → "박지훈").
+                등록된 문서는 환자별로 나뉘어 있어, 이름이 정확해야 그 사람의
+                문서만 검색된다. 특정 인물을 언급하지 않는 일반 질문이면 빈
+                문자열("")을 전달한다.
 
         Returns:
             검색된 문서 내용과 출처 정보
@@ -581,13 +592,14 @@ def answer_agent_question(
 
         if verbose:
             print(f"\n[Tool 호출] search_health_documents")
-            print(f"[검색 질문] {query}")
+            print(f"[검색 질문] {query} / [대상 인물] {user_name!r}")
 
         search_results = search_similar_documents(
             question=query,
             engine=engine,
             top_k=top_k,
             verbose=False,
+            user_name=user_name,
         )
 
         tool_state["called"] = True
@@ -660,12 +672,13 @@ def answer_agent_question(
 답변의 근거가 되는 문서 내용을 설명합니다.
 
 출처:
-- [source: 실제 source 값, page: 실제 page 값]
+- [문서 1]
 
 출처 작성 규칙:
-- 도구 결과에 포함된 source와 page만 사용하세요.
-- 파일명이나 페이지 번호를 임의로 만들지 마세요.
-- 답변에 실제로 사용한 문서의 출처만 표시하세요.
+- 도구 결과는 "[문서 1]", "[문서 2]"처럼 번호로 구분되어 있습니다.
+- 출처를 표시할 때는 실제로 답변에 사용한 문서의 번호("[문서 N]")만 그대로 옮겨 쓰세요.
+- source 파일명이나 page 값을 직접 타이핑해서 옮겨 쓰지 마세요. 한글 파일명을 그대로
+  베끼려고 하면 글자가 깨질 수 있으니, 반드시 번호로만 표시하세요.
 """
 
     # ============================================================
