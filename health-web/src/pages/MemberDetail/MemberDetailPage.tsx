@@ -10,8 +10,13 @@ import { getMemberAiSummary, getMemberDetail, getMemberHealthDataByPeriod } from
 import type { HealthDataHistory } from '../../shared';
 import { connectHealthSocket, subscribeToMember } from '../../realtime/healthSocket';
 import type { HealthSocket } from '../../realtime/healthSocket';
-import { formatBirthDate, glucoseStatusToBadgeLevel, vitalStatusToBadgeLevel } from '../../shared';
-import type { GlucoseStatus, MemberDetail as MemberDetailInfo, VitalStatus } from '../../shared';
+import {
+  bodyWeightStatusToBadgeLevel,
+  formatBirthDate,
+  glucoseStatusToBadgeLevel,
+  vitalStatusToBadgeLevel,
+} from '../../shared';
+import type { BodyWeightStatus, GlucoseStatus, MemberDetail as MemberDetailInfo, VitalStatus } from '../../shared';
 import styles from './MemberDetailPage.module.css';
 
 const PRIMARY = '#0066cc';
@@ -50,6 +55,10 @@ function bloodPressureBadge(status: VitalStatus) {
 function glucoseBadge(status: GlucoseStatus) {
   const text = status === 'high' ? '높음' : status === 'elevated' ? '주의' : '정상';
   return { level: glucoseStatusToBadgeLevel(status), text };
+}
+
+function weightBadge(status: BodyWeightStatus) {
+  return { level: bodyWeightStatusToBadgeLevel(status), text: status };
 }
 
 function initials(name: string): string {
@@ -118,6 +127,7 @@ function MemberDetailView({ memberId, isDoctor }: { memberId: string; isDoctor: 
   const [heartRateStatus, setHeartRateStatus] = useState<VitalStatus | null>(null);
   const [bloodPressureStatus, setBloodPressureStatus] = useState<VitalStatus | null>(null);
   const [glucoseStatus, setGlucoseStatus] = useState<GlucoseStatus | null>(null);
+  const [weightStatus, setWeightStatus] = useState<BodyWeightStatus | null>(null);
   const [isLive, setIsLive] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -200,6 +210,8 @@ function MemberDetailView({ memberId, isDoctor }: { memberId: string; isDoctor: 
         if (lastBloodPressure) setBloodPressureStatus(lastBloodPressure.status);
         const lastGlucose = recentHealthData.glucose.at(-1);
         if (lastGlucose) setGlucoseStatus(lastGlucose.status);
+        const lastWeight = recentHealthData.bodyWeight.at(-1);
+        if (lastWeight) setWeightStatus(lastWeight.status);
 
         setReadyMemberId(memberId);
       })
@@ -276,6 +288,7 @@ function MemberDetailView({ memberId, isDoctor }: { memberId: string; isDoctor: 
             ? prev.fat
             : appendAndTrim(prev.fat, { measuredAt: record.measuredAt, values: [record.bodyFatPercentage] }),
       }));
+      setWeightStatus(record.status);
     });
 
     socket.on('stepCount', (record) => {
@@ -398,8 +411,22 @@ function MemberDetailView({ memberId, isDoctor }: { memberId: string; isDoctor: 
                 points={metrics.glucose}
                 badge={glucoseStatus ? glucoseBadge(glucoseStatus) : undefined}
               />
-              <MetricCard label="체중" unit="kg" decimals={1} series={[{ color: PRIMARY }]} points={metrics.weight} />
-              <MetricCard label="BMI" unit="" decimals={1} series={[{ color: PRIMARY }]} points={metrics.bmi} />
+              <MetricCard
+                label="체중"
+                unit="kg"
+                decimals={1}
+                series={[{ color: PRIMARY }]}
+                points={metrics.weight}
+                badge={weightStatus ? weightBadge(weightStatus) : undefined}
+              />
+              <MetricCard
+                label="BMI"
+                unit=""
+                decimals={1}
+                series={[{ color: PRIMARY }]}
+                points={metrics.bmi}
+                badge={weightStatus ? weightBadge(weightStatus) : undefined}
+              />
               <MetricCard
                 label="골격근량"
                 unit="kg"
