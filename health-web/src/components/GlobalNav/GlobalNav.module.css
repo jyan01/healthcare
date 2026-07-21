@@ -13,12 +13,32 @@
 
 .link {
   position: absolute;
-  right: 20px;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.14);
   color: var(--on-dark);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.12px;
   text-decoration: none;
-  opacity: 0.8;
+  transition: background 0.12s ease, transform 0.1s ease;
 }
 .link:hover {
-  opacity: 1;
-  text-decoration: underline;
+  background: rgba(255, 255, 255, 0.24);
+}
+.link:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.linkIcon {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
 }

@@ -15,7 +15,7 @@
 #   BACKEND_PORT, DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD,
 #   JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, JWT_ACCESS_TTL_SEC, JWT_REFRESH_TTL_SEC,
 #   SIMULATOR_URL, SIMULATOR_RECONNECT_ATTEMPTS, SIMULATOR_TIMEOUT_MS, SLACK_WEBHOOK_URL,
-#   CORS_ORIGINS
+#   CORS_ORIGINS, AI_API_PORT(health-ai 배포 때 등록한 것을 그대로 재사용)
 #
 # 참고: 최상위 `name:` 필드는 Docker Compose v2.20+ 필요.
 # 이보다 낮은 버전이면 `name:` 줄을 지우고 매 명령에 `-p health-backend-${BACKEND_PORT}` 를 붙인다.
@@ -32,6 +32,11 @@ services:
     restart: unless-stopped
     ports:
       - "${BACKEND_PORT:?}:${BACKEND_PORT:?}"
+    extra_hosts:
+      # health-ai 컨테이너는 별도 프로젝트로 떠서 이 컨테이너와 같은 Docker 네트워크에
+      # 있지 않다. host.docker.internal(호스트 게이트웨이)을 통해 host에 publish된
+      # health-ai의 AI_API_PORT로 접근한다 (Linux에서도 Docker 20.10+면 지원됨).
+      - "host.docker.internal:host-gateway"
     environment:
       # 서버
       PORT: "${BACKEND_PORT:?}"
@@ -60,8 +65,8 @@ services:
       # Slack 웹훅
       SLACK_WEBHOOK_URL: "${SLACK_WEBHOOK_URL:?}"
 
-      # GitHub Secret/Variable에 없는 값 → health-backend/.env의 값을 고정으로 사용
-      AI_AGENT_API_URL: "http://localhost:8000"
+      # health-ai(별도 컨테이너, 포트 AI_API_PORT)를 호스트 게이트웨이 경유로 호출
+      AI_AGENT_API_URL: "http://host.docker.internal:${AI_API_PORT:?AI_API_PORT 환경변수가 필요합니다}"
       LOG_DIR: "./logs"
       LOG_RETENTION_DAYS: "7"
       HEALTH_DATA_RETENTION_DAYS: "7"

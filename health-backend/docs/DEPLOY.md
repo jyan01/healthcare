@@ -60,13 +60,20 @@ health-backend/dist/shared/...
 | `SERVER_HOST` / `SERVER_PORT` | Variable | (해당 없음) | 배포 대상 서버 SSH 접속 정보. 컨테이너 환경변수 아님 |
 | `SERVER_USER` / `SSH_KEY` | Secret | (해당 없음) | 배포용 SSH 인증 정보. 컨테이너 환경변수 아님 |
 
+### health-ai(별도 컨테이너) 연동: `AI_AGENT_API_URL`
+
+`AI_AGENT_API_URL`은 고정값이 아니다. health-ai는 이 컨테이너와 **다른 docker compose 프로젝트**로 떠서 같은 네트워크에 속하지 않으므로 `localhost`로는 닿지 않는다. 대신:
+
+- `docker-compose.yml`에 `extra_hosts: ["host.docker.internal:host-gateway"]`를 추가해 컨테이너가 호스트 게이트웨이를 통해 호스트에 publish된 포트로 나갈 수 있게 한다.
+- `AI_AGENT_API_URL: "http://host.docker.internal:${AI_API_PORT:?}"`로, health-ai 배포 때 이미 등록한 `AI_API_PORT`(Variable)를 **그대로 재사용**한다 (health-backend용으로 새로 등록하지 않는다).
+- workflow의 `env:`/`envs:`에도 `AI_API_PORT`를 추가해야 SSH 세션에 값이 주입된다.
+
 ### GitHub Secrets/Variables에 없는 값 → `.env` 값을 고정으로 사용
 
 아래 값들은 GitHub에 등록되어 있지 않으므로, 현재 `health-backend/.env`에 있는 값을 `docker-compose.yml`에 **하드코딩**한다 (학생마다 달라질 필요가 없는 값들):
 
 | 키 | 고정값 |
 | --- | --- |
-| `AI_AGENT_API_URL` | `http://localhost:8000` |
 | `LOG_DIR` | `./logs` |
 | `LOG_RETENTION_DAYS` | `7` |
 | `HEALTH_DATA_RETENTION_DAYS` | `7` |
@@ -143,4 +150,5 @@ Build context가 monorepo 루트 전체가 되므로, `health-web`/`health-mobil
 | `docker compose up`이 `variable is required` 에러로 즉시 실패 | 필요한 환경변수가 셸/SSH 세션에 export되지 않음 | GitHub Secrets/Variables 등록 여부 및 workflow `env:`/`envs:` 목록 확인 |
 | 다른 학생의 컨테이너가 갑자기 내려감/충돌 | `BACKEND_PORT`가 중복 배정되었거나 네임스페이스 없이 명령을 실행 | `BACKEND_PORT` 배정 대장 확인, 항상 프로젝트 디렉터리(`.../health-backend/`)에서만 `docker compose` 실행 |
 | Slack 알림이 오지 않음 | `SLACK_WEBHOOK_URL`이 컨테이너에 전달되지 않음 | `docker exec <container> printenv SLACK_WEBHOOK_URL`로 값 확인 |
+| `/chat`, `/members/:id/ai-summary` 호출 시 500 | `AI_AGENT_API_URL`이 health-ai 컨테이너에 닿지 않음 (health-ai가 안 떠 있거나, `AI_API_PORT`가 워크플로 env에 빠졌거나, `extra_hosts` 누락) | health-ai 컨테이너가 떠 있는지(`docker ps`), `docker exec <backend 컨테이너> printenv AI_AGENT_API_URL`로 값 확인, `docker exec <backend 컨테이너> curl http://host.docker.internal:$AI_API_PORT/`로 연결 확인 |
 | rsync 스텝에서 `mkdir "...health-backend" failed: No such file or directory` | 서버에 `~/deploy/health-backend-${BACKEND_PORT}/` 상위 경로가 아직 없는데 rsync가 여러 단계 디렉터리를 한 번에 못 만듦 | "Ensure remote directories exist" 스텝(mkdir -p)이 upload 스텝보다 먼저 실행되는지 워크플로 순서 확인 |
