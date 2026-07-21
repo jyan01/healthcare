@@ -601,26 +601,26 @@ def answer_agent_question(
     }
 
     # ------------------------------------------------------------
-    # 등록된 회원 이름 목록 조회 (LLM이 user_name을 잘못 채우는 경우의 보정용)
+    # 등록된 회원 이름 목록 (LLM이 user_name을 잘못 채우는 경우의 보정용)
     # 3b 모델은 tool 인자를 가끔 비우거나 질문 전체를 그대로 넣는 등
     # 신뢰도가 낮으므로, 질문 텍스트에서 실제 등록된 이름을 직접 재탐지한다.
+    #
+    # DB(rag_documents.metadata->>'member_name')에서 동적으로 읽어오지 않고
+    # 고정 목록으로 둔다 — 일부 행의 한글 텍스트가 인코딩 문제로 깨져 있으면
+    # (예: "박지훈" 조회 시 이름이 매칭 안 돼 필터 없이 전체 검색으로 새서
+    # 전혀 다른 사람의 문서가 섞이는 사고로 이어졌다) 그 깨진 값과는 절대
+    # 매칭되지 않기 때문. docs/ 폴더의 회원 PDF 10명과 1:1로 대응한다.
     # ------------------------------------------------------------
-    def get_known_member_names() -> list[str]:
-        with engine.connect() as conn:
-            rows = conn.execute(
-                text(
-                    "SELECT DISTINCT metadata->>'member_name' AS member_name "
-                    "FROM rag_documents WHERE metadata->>'member_name' IS NOT NULL"
-                )
-            ).fetchall()
-        return [row.member_name for row in rows if row.member_name]
+    KNOWN_MEMBER_NAMES = [
+        "김민준", "이서연", "박지훈", "최수빈", "정하늘",
+        "한지민", "김도윤", "이민지", "오성민", "서예진",
+    ]
 
     def resolve_user_name(query: str, user_name: str) -> str:
-        known_names = get_known_member_names()
         candidate = (user_name or "").strip()
-        if candidate in known_names:
+        if candidate in KNOWN_MEMBER_NAMES:
             return candidate
-        detected = next((name for name in known_names if name and name in query), None)
+        detected = next((name for name in KNOWN_MEMBER_NAMES if name in query), None)
         return detected or ""
 
     # ============================================================
@@ -734,8 +734,9 @@ def answer_agent_question(
 - 검사 수치(심박, 혈압, 혈당, 체중, BMI, 체지방률, 골격근량 등)가 문서에 있으면
   항목별로 나열하고 정상/이상 여부를 함께 설명하세요. 문서에 없는 항목은 언급하지 마세요.
 - 문서에 의사 진단/소견 내용이 있으면 요약해서 알려주세요.
-- 문서에 생활습관·운동·식이 등 처방/권장 내용이 있으면 정리해서 알려주세요. 없으면 이
-  항목은 그냥 생략하세요.
+- 검진 문서에는 보통 "가상 처방전" 섹션에 운동·식이 등 생활습관 권장 내용이 함께
+  들어 있습니다. 검색된 [문서 N] 조각들을 끝까지 확인해서 이 내용을 놓치지 말고
+  반드시 포함하세요. 정말로 문서 어디에도 없을 때만 이 항목을 생략하세요.
 - 문서에 "가상 데이터"/"실제 진료를 대체하지 않는다" 같은 안내문이 있으면 마지막에
   그 취지를 한 문장으로 덧붙이세요.
 - 짧게 한두 문장으로 뭉뚱그리지 말고, 위 항목들을 자연스러운 문단/목록으로 풀어서
