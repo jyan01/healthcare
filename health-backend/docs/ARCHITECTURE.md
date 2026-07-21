@@ -69,7 +69,7 @@ src/
 └── main.ts
 ```
 
-- `MEMBER`/`DISEASE_CODE`/`MEMBER_DISEASE`, 실시간 정보 5종 테이블의 물리 스키마는 [../../docs/table.sql](../../docs/table.sql) 기준.
+- `MEMBER`/`DISEASE_CODE`/`MEMBER_DISEASE`, 실시간 정보 5종 테이블의 물리 스키마는 [../../docs/table.sql](../../docs/table.sql) 기준. **[고도화]** `sleep` 테이블은 여기 포함되지 않고 [API_SPEC.md](./API_SPEC.md)와 [sleep-table.sql](./sleep-table.sql)에서 별도로 관리한다 (기제공 스키마가 아니라 이번에 신규 추가됨).
 - Node.js 기반 프로젝트(web/mobile)와 공유 가능한 타입·인터페이스·공통 유틸(예: 이상치 판정 기준, DTO 형태)은 `health-backend`에 직접 두지 않고 `../shared`(`shared/types.ts`)에 작성 후 import한다.
 
 ## 5. 데이터 흐름
@@ -164,7 +164,7 @@ sequenceDiagram
 
 ## 8. 데이터 보관 정책
 
-- 실시간 건강정보 5종 테이블(`heart_rate`, `blood_pressure`, `body_weight`, `glucose`, `step_count`)은 `HEALTH_DATA_RETENTION_DAYS`(기본 7일)를 초과한 로우를 스케줄러(`@nestjs/schedule` Cron)로 주기적으로 삭제한다.
+- 실시간 건강정보 6종 테이블(`heart_rate`, `blood_pressure`, `body_weight`, `glucose`, `step_count`, `sleep` **[고도화]**)은 `HEALTH_DATA_RETENTION_DAYS`(기본 7일)를 초과한 로우를 스케줄러(`@nestjs/schedule` Cron)로 주기적으로 삭제한다.
 - `member`, `disease_code`, `member_disease`는 기제공 데이터로 삭제 대상에서 제외한다.
 
 ## 9. 로깅 정책

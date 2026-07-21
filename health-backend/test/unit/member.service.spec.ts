@@ -253,7 +253,15 @@ describe('MemberService', () => {
         bodyWeight: [],
         glucose: [],
         stepCount: [],
-        sleep: [],
+        sleep: [
+          {
+            sleepHours: 6.8,
+            quality: 'fair',
+            bedTime: '2026-07-20T15:12:00Z',
+            wakeTime: '2026-07-20T22:00:00Z',
+            measuredAt: '2026-07-20T22:00:00Z',
+          },
+        ],
       });
 
       const result = await service.getAiSummary('user_003', patient);
@@ -261,6 +269,8 @@ describe('MemberService', () => {
       expect(aiAgentService.ask).toHaveBeenCalledTimes(1);
       const prompt = aiAgentService.ask.mock.calls[0][0];
       expect(prompt).toContain('105bpm');
+      expect(prompt).toContain('6.8시간');
+      expect(prompt).toContain('보통');
       expect(result).toEqual({ summary: 'AI 요약 결과' });
     });
 

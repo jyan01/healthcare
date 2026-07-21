@@ -188,6 +188,7 @@ export class MemberService {
     const lastBloodPressure = recentHealthData.bloodPressure.at(-1);
     const lastGlucose = recentHealthData.glucose.at(-1);
     const lastWeight = recentHealthData.bodyWeight.at(-1);
+    const lastSleep = recentHealthData.sleep.at(-1);
 
     const lines = [
       `환자 ${member.memberName}(${member.gender === 'M' ? '남' : '여'}, 보유질환: ${diseaseText})의 최근 건강 데이터입니다.`,
@@ -206,6 +207,15 @@ export class MemberService {
       );
     if (lastWeight)
       lines.push(`- 체중: ${lastWeight.weightKg}kg, BMI ${lastWeight.bmi}`);
+    if (lastSleep) {
+      const qualityKr =
+        lastSleep.quality === 'good'
+          ? '좋음'
+          : lastSleep.quality === 'fair'
+            ? '보통'
+            : '나쁨';
+      lines.push(`- 수면: ${lastSleep.sleepHours}시간 (품질: ${qualityKr})`);
+    }
     lines.push(
       '위 수치를 바탕으로 의료진이 참고할 한국어 소견을 3문장 이내로 간결하게 요약해줘.',
     );

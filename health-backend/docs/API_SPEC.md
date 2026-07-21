@@ -116,7 +116,7 @@ Set-Cookie: refreshToken=eyJhbGciOi...; HttpOnly; SameSite=Lax; Path=/auth/refre
 | --- | --- |
 | Method / Path | `GET /members/:memberId` |
 | 인증 | 필요 (환자는 본인 `memberId`만 조회 가능) |
-| 설명 | 회원 기본정보 + 최근 7일간 건강데이터(체중/혈압 포함 5종) 조회 |
+| 설명 | 회원 기본정보 + 최근 7일간 건강데이터(체중/혈압/수면 포함 6종) 조회 |
 
 응답
 
