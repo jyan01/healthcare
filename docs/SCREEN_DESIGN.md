@@ -54,4 +54,16 @@
 | 어떤 정보를 보여줄지 | 기본정보: 사진, 이름, 성별, 생년월일 / 건강정보 그래프: 혈압, 심박, 혈당, 몸무게, BMI, 골격근량, 체지방률 |
 | 누가 사용할지 | 의사, 환자 |
 | 디자인 참조 | `docs/DESIGN-apple.md`, 데이터 소스: `health-backend/docs/SIMULATOR_API_SPEC.md` / `docs/DATA_MODEL.md`(외부 실시간 데이터) |
-| 상태 | HTML 샘플 생성 완료 — `demo/patient-detail-web.html`(React 웹, 반응형), `demo/patient-detail-mobile.html`(React Native, 세로형). 7개 지표 모두 실시간 스트리밍 라인차트(크로스헤어 툴팁 포함)로 구현, 심박/혈압/혈당은 상태뱃지(정상·주의·높음) 표시 |
+| 상태 | HTML 샘플 생성 완료 — `demo/patient-detail-web.html`(React 웹, 반응형), `demo/patient-detail-mobile.html`(React Native, 세로형). 7개 지표 모두 실시간 스트리밍 라인차트(크로스헤어 툴팁 포함)로 구현, 심박/혈압/혈당은 상태뱃지(정상·주의·높음) 표시. **[고도화]** 상단에 기간(startAt~endAt) 선택 조회 기능, "AI 소견 요약" 버튼(health-ai RAG Agent에 최근 데이터+보유질환을 컨텍스트로 전달해 요약 생성) 추가 |
+
+### 2.4 AI 상담(챗봇) 화면 — 고도화
+
+| 항목 | 내용 |
+| --- | --- |
+| 무엇을 만드는지 | 의사·환자가 건강 관련 질문을 AI Agent(health-ai, RAG+Ollama)에 자유롭게 물어보는 채팅 화면 |
+| 어떻게 배치할지 | 상단 GlobalNav의 "AI 상담" 링크로 진입. 메시지 목록(사용자 우측 말풍선/AI 좌측 말풍선) + 하단 입력창·전송 버튼 |
+| 어떤 정보를 보여줄지 | 대화 내역(질문/답변), 답변 대기 중 로딩 표시 |
+| 누가 사용할지 | 의사, 환자 |
+| 디자인 참조 | `docs/DESIGN-apple.md` (기존 카드/버튼 색상 토큰 재사용) |
+| 데이터 소스 | `health-backend`의 `POST /chat` → `health-ai`의 `POST /ask` (`health-backend/docs/API_SPEC.md` 1.6) |
+| 상태 | 구현 완료 — `health-web/src/pages/Chat/ChatPage.tsx`. 대화 내역은 세션 동안만 유지(새로고침 시 초기화), 별도 HTML 데모는 생성하지 않음 |

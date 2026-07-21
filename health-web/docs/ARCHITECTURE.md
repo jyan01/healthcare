@@ -26,7 +26,7 @@ health-web/
 ├── public/
 ├── src/
 │   ├── assets/
-│   ├── pages/            # 라우트 단위 화면 (로그인/회원목록/회원상세)
+│   ├── pages/            # 라우트 단위 화면 (로그인/회원목록/회원상세/AI 상담)
 │   ├── components/       # 재사용 UI 컴포넌트 (각 컴포넌트 옆 *.module.css)
 │   ├── api/               # axios 인스턴스, REST 호출 함수
 │   ├── realtime/          # socket.io-client 연결/구독 관리

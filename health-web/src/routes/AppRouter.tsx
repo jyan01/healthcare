@@ -4,6 +4,7 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { LoginPage } from '../pages/Login/LoginPage';
 import { MemberListPage } from '../pages/MemberList/MemberListPage';
 import { MemberDetailPage } from '../pages/MemberDetail/MemberDetailPage';
+import { ChatPage } from '../pages/Chat/ChatPage';
 
 /** 로그인 직후 진입 지점 — 의사는 회원목록, 환자는 본인 상세화면으로 분기 (docs/SCREEN_DESIGN.md 2.2) */
 function HomeRedirect() {
@@ -24,6 +25,7 @@ export function AppRouter() {
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/members" element={<MemberListPage />} />
         <Route path="/members/:memberId" element={<MemberDetailPage />} />
+        <Route path="/chat" element={<ChatPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

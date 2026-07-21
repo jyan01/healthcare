@@ -5,7 +5,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   font-size: 12px;
   font-weight: 400;
   letter-spacing: -0.12px;
+}
+
+.link {
+  position: absolute;
+  right: 20px;
+  color: var(--on-dark);
+  text-decoration: none;
+  opacity: 0.8;
+}
+.link:hover {
+  opacity: 1;
+  text-decoration: underline;
 }

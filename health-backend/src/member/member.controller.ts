@@ -84,4 +84,17 @@ export class MemberController {
       new Date(endAt),
     );
   }
+
+  @ApiOperation({
+    summary: '회원 AI 소견 요약',
+    description:
+      '최근 건강데이터와 보유질환을 AI Agent API(health-ai)에 전달해 의료진용 소견 요약을 받는다.',
+  })
+  @Get(':memberId/ai-summary')
+  getAiSummary(
+    @Param('memberId') memberId: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.memberService.getAiSummary(memberId, user);
+  }
 }

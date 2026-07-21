@@ -1,0 +1,136 @@
+.page {
+  min-height: calc(100vh - 44px);
+  display: flex;
+  flex-direction: column;
+  background: var(--canvas-parchment);
+}
+
+.content {
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 24px 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: -0.224px;
+  color: var(--primary);
+  text-decoration: none;
+  margin-bottom: 12px;
+}
+.backLink svg {
+  width: 10px;
+  height: 10px;
+}
+
+.title {
+  font-family: 'SF Pro Display', system-ui, -apple-system, sans-serif;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: 0.231px;
+  margin: 0 0 4px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--ink-muted-48);
+  margin: 0 0 16px;
+}
+
+.messages {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 16px;
+}
+
+.emptyState {
+  margin: auto;
+  text-align: center;
+  font-size: 14px;
+  color: var(--ink-muted-48);
+}
+
+.bubbleRow {
+  display: flex;
+}
+.bubbleRowUser {
+  justify-content: flex-end;
+}
+.bubbleRowAssistant {
+  justify-content: flex-start;
+}
+
+.bubble {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 15px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.bubbleUser {
+  background: var(--primary);
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+}
+.bubbleAssistant {
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  border-bottom-left-radius: 4px;
+}
+.bubbleError {
+  background: rgba(208, 59, 59, 0.1);
+  border: 1px solid transparent;
+  color: var(--critical);
+}
+
+.composer {
+  display: flex;
+  gap: 8px;
+  padding: 16px 0 24px;
+  border-top: 1px solid var(--hairline);
+  background: var(--canvas-parchment);
+}
+
+.input {
+  flex: 1;
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--hairline);
+  border-radius: 9999px;
+  background: var(--canvas);
+  color: var(--ink);
+  font-size: 15px;
+  outline: none;
+}
+.input:focus {
+  border-color: var(--primary-focus);
+}
+
+.sendButton {
+  height: 44px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 9999px;
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 15px;
+  cursor: pointer;
+}
+.sendButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

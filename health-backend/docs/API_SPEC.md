@@ -167,8 +167,26 @@ Set-Cookie: refreshToken=eyJhbGciOi...; HttpOnly; SameSite=Lax; Path=/auth/refre
 ```
 
 - 지정 기간(`startAt`~`endAt`) 내 데이터를 5종 테이블 각각에서 조건에 맞는 전체 로우로 반환한다 (DB 보관 정책상 최대 7일 이내 범위만 존재).
+- health-web의 회원상세 화면 "기간별 조회" 섹션이 이 API를 사용한다 (`health-web/docs/ARCHITECTURE.md` 참고).
 
-### 1.6 채팅 API (AI Agent 프록시)
+### 1.6 회원 AI 소견 요약
+
+| 항목 | 내용 |
+| --- | --- |
+| Method / Path | `GET /members/:memberId/ai-summary` |
+| 인증 | 필요 (환자는 본인 `memberId`만 조회 가능) |
+| 설명 | 최근 7일 건강데이터 + 보유질환을 프롬프트로 구성해 AI Agent API(health-ai)에 전달하고, 의료진이 참고할 소견 요약을 받는다 |
+
+응답
+
+```json
+{ "summary": "박지훈님은 최근 심박수가 105bpm으로 다소 높게 측정되었으며, 고혈압·당뇨병 병력을 고려할 때 경과 관찰이 필요합니다..." }
+```
+
+- `AiAgentService`(1.7의 채팅 API와 동일한 내부 모듈)를 통해 health-ai의 `POST /ask`를 호출한다.
+- AI 호출이 실패하면(타임아웃 등) `502`류 오류가 그대로 전달된다 — 이 API는 사용자가 명시적으로 버튼을 눌러 호출하는 것이므로 채팅과 달리 fallback 문구를 만들지 않는다.
+
+### 1.7 채팅 API (AI Agent 프록시)
 
 | 항목 | 내용 |
 | --- | --- |
@@ -189,8 +207,9 @@ Set-Cookie: refreshToken=eyJhbGciOi...; HttpOnly; SameSite=Lax; Path=/auth/refre
 ```
 
 - health-backend는 인증만 검증하고, 질의/응답 내용에 대한 가공 없이 AI Agent API(`AI_AGENT_API_URL`)에 그대로 프록시한다.
+- **내부 구현**: health-ai는 `/chat`이 아니라 `POST /ask`(`{question, top_k, temperature}` → 답변 문자열)만 제공한다(`health-ai/health-ai-api.py`). 그래서 health-backend의 `AiAgentService`가 `{message}` → `{question}`으로 변환해 `/ask`를 호출하고, 응답 문자열을 `{reply}`로 감싸서 돌려준다. `health-web` 등 클라이언트가 보는 `/chat` 계약 자체는 바뀌지 않는다.
 
-### 1.7 웹훅 메시지 API (Slack 알림 발송)
+### 1.8 웹훅 메시지 API (Slack 알림 발송)
 
 | 항목 | 내용 |
 | --- | --- |
@@ -212,6 +231,7 @@ Set-Cookie: refreshToken=eyJhbGciOi...; HttpOnly; SameSite=Lax; Path=/auth/refre
 
 - ALM(이상 데이터 감지) 모듈이 내부적으로 호출하는 것이 기본 사용처이며, 관리자가 수동으로 알림을 보내는 용도로도 재사용한다.
 - 발송 실패 시 `sent: false`와 함께 `500` 응답, 로그(winston)에 실패 사유를 남긴다.
+- **[고도화]** ALM이 이상 수치를 감지해 이 API를 호출할 때 넘기는 `message`는 고정 템플릿이 아니라, `AlertService`가 AI Agent API(health-ai `/ask`)에 수치를 프롬프트로 전달해 작성시킨 문구다(`docs/ARCHITECTURE.md`의 "AI Agent(LLM)가 분석한 내용을 Slack 웹훅으로 전송" 요구사항 반영). AI 호출이 실패하면 기존의 고정 템플릿(`[이상감지] {memberId} {memberName} - ...`)으로 대체해 알림 발송 자체는 지연·중단되지 않는다.
 
 ## 2. WebSocket 인터페이스 (실시간 건강정보 push)
 

@@ -5,6 +5,7 @@ import { Member } from '../../src/member/entities/member.entity';
 import { MemberDisease } from '../../src/member/entities/member-disease.entity';
 import { DiseaseCode } from '../../src/member/entities/disease-code.entity';
 import { HealthDataService } from '../../src/health-data/health-data.service';
+import { AiAgentService } from '../../src/ai-agent/ai-agent.service';
 import type { JwtPayload } from '../../../shared/types';
 
 function buildMember(overrides: Partial<Member> = {}): Member {
@@ -29,6 +30,7 @@ describe('MemberService', () => {
   let healthDataService: jest.Mocked<
     Pick<HealthDataService, 'getRecent' | 'getByPeriod'>
   >;
+  let aiAgentService: jest.Mocked<Pick<AiAgentService, 'ask'>>;
   let queryBuilder: {
     where: jest.Mock;
     andWhere: jest.Mock;
@@ -66,8 +68,17 @@ describe('MemberService', () => {
     memberDiseaseRepo = { find: jest.fn().mockResolvedValue([]) };
     diseaseCodeRepo = { find: jest.fn().mockResolvedValue([]) };
     healthDataService = {
-      getRecent: jest.fn().mockResolvedValue({}),
+      getRecent: jest.fn().mockResolvedValue({
+        heartRate: [],
+        bloodPressure: [],
+        bodyWeight: [],
+        glucose: [],
+        stepCount: [],
+      }),
       getByPeriod: jest.fn().mockResolvedValue({}),
+    };
+    aiAgentService = {
+      ask: jest.fn().mockResolvedValue('AI 요약 결과'),
     };
 
     service = new MemberService(
@@ -75,6 +86,7 @@ describe('MemberService', () => {
       memberDiseaseRepo as unknown as Repository<MemberDisease>,
       diseaseCodeRepo as unknown as Repository<DiseaseCode>,
       healthDataService as unknown as HealthDataService,
+      aiAgentService as unknown as AiAgentService,
     );
   });
 
@@ -189,6 +201,36 @@ describe('MemberService', () => {
           new Date(),
           new Date(),
         ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+  });
+
+  describe('getAiSummary', () => {
+    it('최근 건강데이터를 프롬프트로 구성해 AiAgentService에 전달하고 결과를 반환한다', async () => {
+      memberRepo.findOne.mockResolvedValue(buildMember());
+      healthDataService.getRecent.mockResolvedValue({
+        heartRate: [
+          { heartRate: 105, status: '이상', remark: null, measuredAt: '2026-07-21T00:00:00Z' },
+        ],
+        bloodPressure: [],
+        bodyWeight: [],
+        glucose: [],
+        stepCount: [],
+      });
+
+      const result = await service.getAiSummary('user_003', patient);
+
+      expect(aiAgentService.ask).toHaveBeenCalledTimes(1);
+      const prompt = aiAgentService.ask.mock.calls[0][0] as string;
+      expect(prompt).toContain('105bpm');
+      expect(result).toEqual({ summary: 'AI 요약 결과' });
+    });
+
+    it('환자가 다른 회원의 AI 요약을 요청하면 ForbiddenException을 던진다', async () => {
+      memberRepo.findOne.mockResolvedValue(buildMember());
+
+      await expect(
+        service.getAiSummary('user_004', patient),
       ).rejects.toBeInstanceOf(ForbiddenException);
     });
   });

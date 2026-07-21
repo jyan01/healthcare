@@ -1,0 +1,10 @@
+# health-ai Docker 빌드 컨텍스트에서 제외할 경로 (실습용 노트북/캐시는 런타임에 불필요).
+__pycache__
+*.pyc
+.ipynb_checkpoints
+*.ipynb
+*.pdf
+.venv
+.git
+**/.env
+**/.env.*

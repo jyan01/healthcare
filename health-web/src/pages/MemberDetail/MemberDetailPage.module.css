@@ -129,6 +129,138 @@
   color: var(--ink-muted-48);
 }
 
+/* AI 소견 요약 — 고도화 */
+.aiSummaryCard {
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+
+.aiSummaryHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.aiSummaryTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.aiSummaryButton {
+  height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 9999px;
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.aiSummaryButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.aiSummaryText {
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+
+.aiSummaryError {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--critical);
+}
+
+/* 기간별 조회 — 고도화 */
+.periodSection {
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+  padding: 20px 24px;
+  margin-top: 24px;
+}
+
+.periodForm {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.periodField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.periodField label {
+  font-size: 12px;
+  color: var(--ink-muted-48);
+}
+.periodField input {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  font-size: 13px;
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+.periodButton {
+  height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 9999px;
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.periodButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.periodResultGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.periodResultCard {
+  border: 1px solid var(--divider-soft);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.periodResultLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-muted-80);
+  margin-bottom: 6px;
+}
+.periodResultStat {
+  font-size: 12px;
+  color: var(--ink-muted-48);
+}
+.periodResultStat strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
 @media (max-width: 640px) {
   .content {
     padding: 24px 16px 64px;

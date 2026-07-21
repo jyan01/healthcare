@@ -9,7 +9,10 @@ import { Member } from './entities/member.entity';
 import { MemberDisease } from './entities/member-disease.entity';
 import { DiseaseCode } from './entities/disease-code.entity';
 import { HealthDataService } from '../health-data/health-data.service';
+import { AiAgentService } from '../ai-agent/ai-agent.service';
 import { DiseaseSummary, JwtPayload, MemberSummary } from '../shared';
+
+type RecentHealthData = Awaited<ReturnType<HealthDataService['getRecent']>>;
 
 @Injectable()
 export class MemberService {
@@ -20,6 +23,7 @@ export class MemberService {
     @InjectRepository(DiseaseCode)
     private readonly diseaseCodeRepo: Repository<DiseaseCode>,
     private readonly healthDataService: HealthDataService,
+    private readonly aiAgentService: AiAgentService,
   ) {}
 
   findById(memberId: string): Promise<Member | null> {
@@ -116,5 +120,60 @@ export class MemberService {
   ) {
     await this.assertAccess(requester, memberId);
     return this.healthDataService.getByPeriod(memberId, startAt, endAt);
+  }
+
+  /** 최근 건강데이터 + 보유질환을 컨텍스트로 AI Agent API에 전달해 의료진용 소견 요약을 받는다 */
+  async getAiSummary(
+    memberId: string,
+    requester: JwtPayload,
+  ): Promise<{ summary: string }> {
+    await this.assertAccess(requester, memberId);
+    const member = await this.findById(memberId);
+    if (!member) throw new NotFoundException('회원을 찾을 수 없습니다.');
+
+    const [diseases, recentHealthData] = await Promise.all([
+      this.findDiseases(memberId),
+      this.healthDataService.getRecent(memberId),
+    ]);
+
+    const prompt = this.buildAiSummaryPrompt(member, diseases, recentHealthData);
+    const summary = await this.aiAgentService.ask(prompt);
+    return { summary };
+  }
+
+  private buildAiSummaryPrompt(
+    member: Member,
+    diseases: DiseaseSummary[],
+    recentHealthData: RecentHealthData,
+  ): string {
+    const diseaseText = diseases.length
+      ? diseases.map((d) => d.nameKr).join(', ')
+      : '없음';
+    const lastHeartRate = recentHealthData.heartRate.at(-1);
+    const lastBloodPressure = recentHealthData.bloodPressure.at(-1);
+    const lastGlucose = recentHealthData.glucose.at(-1);
+    const lastWeight = recentHealthData.bodyWeight.at(-1);
+
+    const lines = [
+      `환자 ${member.memberName}(${member.gender === 'M' ? '남' : '여'}, 보유질환: ${diseaseText})의 최근 건강 데이터입니다.`,
+    ];
+    if (lastHeartRate)
+      lines.push(
+        `- 심박수: ${lastHeartRate.heartRate}bpm (${lastHeartRate.status})`,
+      );
+    if (lastBloodPressure)
+      lines.push(
+        `- 혈압: ${lastBloodPressure.systolic}/${lastBloodPressure.diastolic}mmHg (${lastBloodPressure.status})`,
+      );
+    if (lastGlucose)
+      lines.push(
+        `- 혈당: ${lastGlucose.glucoseValue}mg/dL (${lastGlucose.status})`,
+      );
+    if (lastWeight)
+      lines.push(`- 체중: ${lastWeight.weightKg}kg, BMI ${lastWeight.bmi}`);
+    lines.push(
+      '위 수치를 바탕으로 의료진이 참고할 한국어 소견을 3문장 이내로 간결하게 요약해줘.',
+    );
+    return lines.join('\n');
   }
 }

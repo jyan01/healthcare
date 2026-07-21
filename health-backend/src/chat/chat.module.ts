@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
+import { AiAgentModule } from '../ai-agent/ai-agent.module';
 import { ChatService } from './chat.service';
 import { ChatController } from './chat.controller';
 
 @Module({
-  imports: [HttpModule],
+  imports: [AiAgentModule],
   controllers: [ChatController],
   providers: [ChatService],
 })
