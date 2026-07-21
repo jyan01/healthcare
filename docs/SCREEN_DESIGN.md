@@ -54,7 +54,7 @@
 | 어떤 정보를 보여줄지 | 기본정보: 사진, 이름, 성별, 생년월일, 보유 질병(칩), 진단 메모 / 건강정보 그래프: 혈압, 심박, 혈당, 몸무게, BMI, 골격근량, 체지방률, 걸음수 |
 | 누가 사용할지 | 의사, 환자 |
 | 디자인 참조 | `docs/DESIGN-apple.md`, 데이터 소스: `health-backend/docs/SIMULATOR_API_SPEC.md` / `docs/DATA_MODEL.md`(외부 실시간 데이터) |
-| 상태 | HTML 샘플 생성 완료 — `demo/patient-detail-web.html`(React 웹, 반응형), `demo/patient-detail-mobile.html`(React Native, 세로형). 8개 지표 모두 실시간 스트리밍 라인차트(크로스헤어 툴팁 포함)로 구현, 심박/혈압/혈당/체중·BMI는 상태뱃지 표시(체중·BMI는 저체중·정상·과체중·비만). 골격근량/체지방률/걸음수는 백엔드가 판정하는 상태값이 없어 뱃지 없음. 보유 질병은 프로필 카드에 칩으로, 진단 메모(`diagContent`)가 있는 질병은 별도 카드에 목록으로 표시. **[고도화]** 상단에 기간(startAt~endAt) 선택 조회 기능, "AI 소견 요약" 버튼(health-ai RAG Agent에 최근 데이터+보유질환을 컨텍스트로 전달해 요약 생성) 추가 |
+| 상태 | HTML 샘플 생성 완료 — `demo/patient-detail-web.html`(React 웹, 반응형), `demo/patient-detail-mobile.html`(React Native, 세로형). 8개 지표 모두 실시간 스트리밍 라인차트(크로스헤어 툴팁 포함)로 구현, 심박/혈압/혈당/체중·BMI는 상태뱃지 표시(체중·BMI는 저체중·정상·과체중·비만). 심박수가 "이상" 상태일 때는 배지 아래 상세 사유(`remark`, 예: "Possible tachycardia detected.")도 함께 표시. 골격근량/체지방률/걸음수는 백엔드가 판정하는 상태값이 없어 뱃지 없음. 보유 질병은 프로필 카드에 칩으로, 진단 메모(`diagContent`)가 있는 질병은 별도 카드에 목록으로 표시. **[고도화]** 상단에 기간(startAt~endAt) 선택 조회 기능, "AI 소견 요약" 버튼(health-ai RAG Agent에 최근 데이터+보유질환을 컨텍스트로 전달해 요약 생성) 추가 |
 
 ### 2.4 AI 상담(챗봇) 화면 — 고도화
 

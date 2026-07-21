@@ -25,6 +25,8 @@ export interface MetricCardProps {
   series: MetricSeriesConfig[];
   points: MetricPoint[];
   badge?: { level: BadgeLevel; text: string };
+  /** 배지 아래 표시할 상세 설명 (예: 이상 이벤트 사유). 없으면 표시하지 않음 */
+  note?: string | null;
 }
 
 function relativeLabel(pointTime: string, latestTime: string): string {
@@ -38,7 +40,7 @@ function relativeLabel(pointTime: string, latestTime: string): string {
   return `-${hr}시간`;
 }
 
-export function MetricCard({ label, unit, decimals, series, points, badge }: MetricCardProps) {
+export function MetricCard({ label, unit, decimals, series, points, badge, note }: MetricCardProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
@@ -80,6 +82,7 @@ export function MetricCard({ label, unit, decimals, series, points, badge }: Met
         <div>
           <div className={styles.label}>{label}</div>
           {badge && <StatusBadge level={badge.level} text={badge.text} />}
+          {note && <div className={styles.note}>{note}</div>}
         </div>
         <div className={styles.value}>
           <span className={styles.num}>{last ? fmt(last.values[0]) : '--'}</span>

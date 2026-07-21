@@ -125,6 +125,7 @@ function MemberDetailView({ memberId, isDoctor }: { memberId: string; isDoctor: 
   const [detail, setDetail] = useState<MemberDetailInfo | null>(null);
   const [metrics, setMetrics] = useState<MetricsState>(EMPTY_METRICS);
   const [heartRateStatus, setHeartRateStatus] = useState<VitalStatus | null>(null);
+  const [heartRateRemark, setHeartRateRemark] = useState<string | null>(null);
   const [bloodPressureStatus, setBloodPressureStatus] = useState<VitalStatus | null>(null);
   const [glucoseStatus, setGlucoseStatus] = useState<GlucoseStatus | null>(null);
   const [weightStatus, setWeightStatus] = useState<BodyWeightStatus | null>(null);
@@ -205,7 +206,10 @@ function MemberDetailView({ memberId, isDoctor }: { memberId: string; isDoctor: 
         });
 
         const lastHeartRate = recentHealthData.heartRate.at(-1);
-        if (lastHeartRate) setHeartRateStatus(lastHeartRate.status);
+        if (lastHeartRate) {
+          setHeartRateStatus(lastHeartRate.status);
+          setHeartRateRemark(lastHeartRate.remark ?? null);
+        }
         const lastBloodPressure = recentHealthData.bloodPressure.at(-1);
         if (lastBloodPressure) setBloodPressureStatus(lastBloodPressure.status);
         const lastGlucose = recentHealthData.glucose.at(-1);
@@ -247,6 +251,7 @@ function MemberDetailView({ memberId, isDoctor }: { memberId: string; isDoctor: 
         heartRate: appendAndTrim(prev.heartRate, { measuredAt: record.measuredAt, values: [record.heartRate] }),
       }));
       setHeartRateStatus(record.status);
+      setHeartRateRemark(record.remark ?? null);
     });
 
     socket.on('bloodPressure', (record) => {
@@ -391,6 +396,7 @@ function MemberDetailView({ memberId, isDoctor }: { memberId: string; isDoctor: 
                 series={[{ color: PRIMARY }]}
                 points={metrics.heartRate}
                 badge={heartRateStatus ? heartRateBadge(heartRateStatus) : undefined}
+                note={heartRateStatus === '이상' ? heartRateRemark : undefined}
               />
               <MetricCard
                 label="혈압"
